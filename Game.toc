@@ -4,6 +4,8 @@
 Math/Vector.lua
 
 Entities/GameEntity.lua
+Entities/EntityGraph.lua
+
 Entities/PlayerEntity.lua
 
 Physics.lua
