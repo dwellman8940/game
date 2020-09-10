@@ -13,3 +13,15 @@ Background:SetAllPoints(ClientFrame)
 
 local RenderFrame = CreateFrame("Frame", nil, ClientFrame)
 RenderFrame:SetClipsChildren(true)
+
+local ClientMixin = {}
+
+function CreateClient(game)
+    local client = CreateFromMixins(ClientMixin)
+    client:Initialize(game)
+
+    return client
+end
+
+function ClientMixin:Initialize(game)
+end
