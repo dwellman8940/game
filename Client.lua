@@ -16,6 +16,7 @@ RenderFrame:SetClipsChildren(true)
 RenderFrame:SetAllPoints(ClientFrame)
 
 local ClientMixin = {}
+local ClientMessageHandlers = {}
 
 function CreateClient()
     local client = CreateFromMixins(ClientMixin)
@@ -25,11 +26,38 @@ function CreateClient()
 end
 
 function ClientMixin:Initialize()
+    self.messageQueue = {}
+    self:ResetGame()
+
+    C_Timer.NewTicker(0, function() self:TryTick() end)
+end
+
+function ClientMixin:ResetGame()
     self.entityGraph = CreateEntityGraph()
+
+    self.remotePlayers = {}
 
     self.elapsed = 0
     self.lastTickTime = GetTime()
-    C_Timer.NewTicker(0, function() self:TryTick() end)
+end
+
+function ClientMixin:CreateNetworkConnection(lobbyCode, localServer)
+    local localServerOnMessageReceived = localServer and function(messageName, ...) localServer:AddMessageToQueue(messageName, ...) end or nil
+    self.networkConnection = CreateClientConnection(lobbyCode, localServerOnMessageReceived, function(messageName, ...) self:AddMessageToQueue(messageName, ...) end)
+end
+
+function ClientMixin:AddMessageToQueue(messageName, ...)
+    table.insert(self.messageQueue, { messageName, ... })
+end
+
+function ClientMixin:ProcessMessages()
+    if #self.messageQueue > 0 then
+        for i, messageData in ipairs(self.messageQueue) do
+            local messageName = messageData[1]
+            ClientMessageHandlers[messageName](self, unpack(messageData, 2))
+        end
+        self.messageQueue = {}
+    end
 end
 
 local TARGET_FPS = 60
@@ -59,6 +87,8 @@ function ClientMixin:Render(delta)
 end
 
 function ClientMixin:Tick(delta)
+    self:ProcessMessages()
+
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
         entity:TickClient(delta)
@@ -71,6 +101,10 @@ end
 
 function ClientMixin:GetEntityGraph()
     return self.entityGraph
+end
+
+function ClientMixin:SendMessage(messageName, ...)
+    self.networkConnection:SendMessageToServer(messageName, ...)
 end
 
 function ClientMixin:GetCursorLocation()
@@ -93,7 +127,32 @@ function ClientMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
 end
 
 function ClientMixin:BeginGame()
-    self.localPlayer = self:CreateEntity(PlayerEntityMixin)
+    --self.localPlayer = self:CreateEntity(PlayerEntityMixin)
 
     --self:BindKeyboardToPlayer(self.localPlayer)
+end
+
+function ClientMessageHandlers:ResetGame()
+    self:ResetGame()
+end
+
+function ClientMessageHandlers:InitPlayer(playerName, playerID)
+    Print("InitPlayer", playerName, playerID, type(playerID))
+    if playerName == UnitName("player") then
+        self.localPlayer = self:CreateEntity(PlayerEntityMixin)
+        self.localPlayer:SetPlayerID(playerID)
+        self.localPlayer:MarkAsLocalPlayer()
+    else
+        local remotePlayer = self:CreateEntity(PlayerEntityMixin)
+        remotePlayer:SetPlayerID(playerID)
+
+        self.remotePlayers[playerID] = remotePlayer
+    end
+end
+
+function ClientMessageHandlers:OnMovement(playerID, x, y)
+    local remotePlayer = self.remotePlayers[playerID]
+    if remotePlayer then
+        remotePlayer:SetWorldLocation(CreateVector2(x, y))
+    end
 end

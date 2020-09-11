@@ -2,6 +2,8 @@ local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
+local ServerMessageHandlers = {}
+
 local ServerMixin = {}
 
 function CreateServer()
@@ -12,6 +14,7 @@ function CreateServer()
 end
 
 function ServerMixin:Initialize()
+    self.messageQueue = {}
     self.entityGraph = CreateEntityGraph()
 
     self.elapsed = 0
@@ -19,7 +22,32 @@ function ServerMixin:Initialize()
     C_Timer.NewTicker(0, function() self:TryTick() end)
 end
 
-local TARGET_FPS = 60
+function ServerMixin:BeginGame(playersInLobbby)
+    self:SendMessageToAllClients("ResetGame")
+
+    self.players = {}
+
+    for i, playerName in ipairs(playersInLobbby) do
+        local player = self:CreateEntity(PlayerEntityMixin)
+        player:SetPlayerID(i)
+        self.players[i] = player
+        self:SendMessageToAllClients("InitPlayer", playerName, i)
+    end
+end
+
+function ServerMixin:SendMessageToAllClients(messageName, ...)
+    self.networkConnection:SendMessageToAllClients(messageName, ...)
+end
+
+function ServerMixin:CreateNetworkConnection(lobbyCode)
+    self.networkConnection = CreateServerConnection(lobbyCode, function(messageName, ...) self:AddMessageToQueue(messageName, ...) end)
+end
+
+function ServerMixin:AddMessageToQueue(messageName, ...)
+    table.insert(self.messageQueue, { messageName, ... })
+end
+
+local TARGET_FPS = 20
 local SECONDS_PER_TICK = 1 / TARGET_FPS 
 function ServerMixin:TryTick()
     local now = GetTime()
@@ -35,9 +63,21 @@ function ServerMixin:TryTick()
 end
 
 function ServerMixin:Tick(delta)
+    self:ProcessMessages()
+
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
         entity:TickServer(delta)
+    end
+end
+
+function ServerMixin:ProcessMessages()
+    if #self.messageQueue > 0 then
+        for i, messageData in ipairs(self.messageQueue) do
+            local messageName = messageData[1]
+            ServerMessageHandlers[messageName](self, unpack(messageData, 2))
+        end
+        self.messageQueue = {}
     end
 end
 
@@ -52,4 +92,11 @@ function ServerMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
         self:GetEntityGraph():AddToRoot(gameEntity)
     end
     return gameEntity
+end
+
+function ServerMessageHandlers:OnMovement(playerID, x, y)
+    local player = self.players[playerID]
+    if player then
+        player:SetWorldLocation(CreateVector2(x, y))
+    end
 end

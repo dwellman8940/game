@@ -12,10 +12,22 @@ end
 
 function GameMixin:Initialize()
     self.client = CreateClient()
-    self.server = CreateServer()
+    if UnitName("player") == "Ladreiline" then
+        self.server = CreateServer()
+    end
 end
 
 function GameMixin:Run()
+    local lobbyCode = "RAWR"
+    self.client:CreateNetworkConnection(lobbyCode, self.server)
+
+    if self.server then
+        self.server:CreateNetworkConnection(lobbyCode)
+
+        local playersInLobby = {"Ladreiline", "Cereekeloran"} -- todo: real lobby
+        self.server:BeginGame(playersInLobby)
+    end
+
     self.client:BeginGame()
 end
 

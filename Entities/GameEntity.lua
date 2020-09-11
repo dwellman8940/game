@@ -37,6 +37,11 @@ function GameEntityMixin:GetWorldLocation()
     return self.relativeLocation
 end
 
+function GameEntityMixin:SetWorldLocation(worldLocation)
+    -- todo: resolve world location
+    self.relativeLocation = worldLocation
+end
+
 function GameEntityMixin:GetChildEntities()
     return self.childEntities
 end

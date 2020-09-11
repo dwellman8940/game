@@ -18,3 +18,22 @@ end
 function Vector2Mixin:GetXY()
     return self.x, self.y
 end
+
+function Vector2Mixin:Equals(other)
+    return self.x == other.x
+        and self.y == other.y
+end
+
+local function Dot(leftX, leftY, rightX, rightY)
+	return leftX * rightX + leftY * rightY
+end
+
+function Vector2Mixin:DistanceSquared(other)
+    local deltaX = self.x - other.x
+    local deltaY = self.y - other.y
+    return deltaX * deltaX + deltaY * deltaY
+end
+
+function Vector2Mixin:Dot(other)
+    return Dot(self.x, self.y, other.x, other.y)
+end
