@@ -2,7 +2,7 @@ local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
-Vector2Mixin = {}
+local Vector2Mixin = {}
 
 function CreateVector2(x, y)
     local vector2 = CreateFromMixins(Vector2Mixin)

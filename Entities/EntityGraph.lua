@@ -2,32 +2,36 @@ local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
-EntityGraphMixin = {}
+local EntityGraphMixin = {}
 
-function EntityGraphMixin:Initialize(game)
-    self.rootEntity = CreateGameEntity(game)
+function CreateEntityGraph()
+    local entityGraph = CreateFromMixins(EntityGraphMixin)
+    entityGraph:Initialize()
+    return entityGraph
 end
 
-function EntityGraphMixin:GetRootEntity()
-    return self.rootEntity
+function EntityGraphMixin:Initialize()
+    self.childEntities = {}
+end
+
+function EntityGraphMixin:AddToRoot(gameEntity)
+    table.insert(self.childEntities, gameEntity)
 end
 
 do
-    local function Flatten(flattened, node)
-        local childEntities = node:GetChildEntities()
-
+    local function Flatten(flattened, childEntities)
         for i, childEntity in ipairs(childEntities) do
             table.insert(flattened, childEntity)
         end
 
         for i, childEntity in ipairs(childEntities) do
-            Flatten(flattened, childEntity)
+            Flatten(flattened, childEntity:GetChildEntities())
         end
     end
 
     function EntityGraphMixin:EnumerateAll()
         local flattened = {}
-        Flatten(flattened, self.rootEntity)
+        Flatten(flattened, self.childEntities)
 
         return ipairs(flattened)
     end

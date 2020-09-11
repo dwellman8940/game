@@ -2,14 +2,13 @@ local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
-
 PlayerEntityMixin = CreateFromMixins(GameEntityMixin)
 
 function PlayerEntityMixin:Render(delta) -- override
     self:CreateRenderData()
 
     -- todo: better drawing
-    local client = self:GetGame():GetClient()
+    local client = self:GetClient()
     self.renderData.frame:SetPoint("CENTER", client:GetRootFrame(), "BOTTOMLEFT", self:GetWorldLocation():GetXY())
 end
 
@@ -20,7 +19,7 @@ function PlayerEntityMixin:CreateRenderData()
 
     self.renderData = {}
 
-    local client = self:GetGame():GetClient()
+    local client = self:GetClient()
     self.renderData.frame = CreateFrame("Frame", nil, client:GetRootFrame())
     self.renderData.frame:SetWidth(100)
     self.renderData.frame:SetHeight(100)
@@ -31,9 +30,7 @@ function PlayerEntityMixin:CreateRenderData()
     self.renderData.texture:SetAllPoints(self.renderData.frame)
 end
 
-function PlayerEntityMixin:Tick(delta)
-    local client = self:GetGame():GetClient()
-    if client then
-        self:SetRelativeLocation(client:GetCursorLocation())
-    end
+function PlayerEntityMixin:TickClient(delta)
+    local client = self:GetClient()
+    self:SetRelativeLocation(client:GetCursorLocation())
 end
