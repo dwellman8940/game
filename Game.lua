@@ -24,7 +24,7 @@ function GameMixin:Run()
     if self.server then
         self.server:CreateNetworkConnection(lobbyCode)
 
-        local playersInLobby = {"Ladreiline", "Cereekeloran"} -- todo: real lobby
+        local playersInLobby = {"Ladreiline", "Cereekeloran", "Dorbland"} -- todo: real lobby
         self.server:BeginGame(playersInLobby)
     end
 

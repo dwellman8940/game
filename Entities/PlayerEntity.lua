@@ -26,12 +26,14 @@ function PlayerEntityMixin:CreateRenderData()
 
     self.renderData.texture = self.renderData.frame:CreateTexture(nil, "ARTWORK", -8)
 
-    Print("CreateRenderData", self:GetPlayerID())
-    if self:IsLocalPlayer() then
-        self.renderData.texture:SetColorTexture(1, 0, 0, 1)
-    else
-        self.renderData.texture:SetColorTexture(0, 1, 0, 1)
-    end
+    local colorTable = {
+        {1, 0, 0, 1},
+        {0, 1, 0, 1},
+        {0, 0, 1, 1},
+        {1, 1, 1, 1},
+    }
+    
+    self.renderData.texture:SetColorTexture(unpack(colorTable[self:GetPlayerID()]))
     self.renderData.texture:SetAllPoints(self.renderData.frame)
 end
 
@@ -56,21 +58,14 @@ function PlayerEntityMixin:TickClient(delta)
         local client = self:GetClient()
         self:SetRelativeLocation(client:GetCursorLocation())
 
-        
         local worldLocation = self:GetWorldLocation()
-
-        if not self.lastSentLocation or self.lastSentLocation:DistanceSquared(worldLocation) > 5 then
+        if not self.lastSentLocation or self.lastSentLocation:DistanceSquared(worldLocation) > 1 then
             self.lastSentLocation = worldLocation
-            self:GetClient():SendMessage("OnMovement", self:GetPlayerID(), worldLocation:GetXY())
+            self:GetClient():SendMessageToPeers("OnMovement", self:GetPlayerID(), worldLocation:GetXY())
         end
     end
 end
 
 function PlayerEntityMixin:TickServer(delta)
-    local worldLocation = self:GetWorldLocation()
 
-    if not self.lastSentLocation or self.lastSentLocation:DistanceSquared(worldLocation) > 100 then
-        self.lastSentLocation = worldLocation
-        self:GetServer():SendMessageToAllClients("OnMovement", self:GetPlayerID(), worldLocation:GetXY())
-    end
 end

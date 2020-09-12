@@ -47,7 +47,7 @@ function ServerMixin:AddMessageToQueue(messageName, ...)
     table.insert(self.messageQueue, { messageName, ... })
 end
 
-local TARGET_FPS = 20
+local TARGET_FPS = 60
 local SECONDS_PER_TICK = 1 / TARGET_FPS 
 function ServerMixin:TryTick()
     local now = GetTime()

@@ -1,6 +1,6 @@
 ## Interface: 80300
 
-Networking/ChatThrottleLib.lua
+Util/Debug.lua
 
 Networking/Messages.lua
 Networking/Networking.lua

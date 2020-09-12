@@ -43,7 +43,13 @@ end
 
 function ClientMixin:CreateNetworkConnection(lobbyCode, localServer)
     local localServerOnMessageReceived = localServer and function(messageName, ...) localServer:AddMessageToQueue(messageName, ...) end or nil
-    self.networkConnection = CreateClientConnection(lobbyCode, localServerOnMessageReceived, function(messageName, ...) self:AddMessageToQueue(messageName, ...) end)
+
+    local function OnMessageReceived(messageName, ...)
+        self:AddMessageToQueue(messageName, ...)
+    end
+    local onServerMessageReceived = OnMessageReceived
+    local onPeerMessageReceived = OnMessageReceived
+    self.networkConnection = CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onServerMessageReceived, onPeerMessageReceived)
 end
 
 function ClientMixin:AddMessageToQueue(messageName, ...)
@@ -107,6 +113,10 @@ function ClientMixin:SendMessage(messageName, ...)
     self.networkConnection:SendMessageToServer(messageName, ...)
 end
 
+function ClientMixin:SendMessageToPeers(messageName, ...)
+    self.networkConnection:SendMessageToPeers(messageName, ...)
+end
+
 function ClientMixin:GetCursorLocation()
     local x, y = GetCursorPosition()
 
@@ -137,7 +147,6 @@ function ClientMessageHandlers:ResetGame()
 end
 
 function ClientMessageHandlers:InitPlayer(playerName, playerID)
-    Print("InitPlayer", playerName, playerID, type(playerID))
     if playerName == UnitName("player") then
         self.localPlayer = self:CreateEntity(PlayerEntityMixin)
         self.localPlayer:SetPlayerID(playerID)
