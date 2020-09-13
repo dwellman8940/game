@@ -47,9 +47,12 @@ function ClientMixin:CreateNetworkConnection(lobbyCode, localServer)
     local function OnMessageReceived(messageName, ...)
         self:AddMessageToQueue(messageName, ...)
     end
+
     local onServerMessageReceived = OnMessageReceived
+    self.clientNetworkConnection = CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onServerMessageReceived)
+
     local onPeerMessageReceived = OnMessageReceived
-    self.networkConnection = CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onServerMessageReceived, onPeerMessageReceived)
+    self.peerNetworkConnection = CreatePeerConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onPeerMessageReceived)
 end
 
 function ClientMixin:AddMessageToQueue(messageName, ...)
@@ -110,11 +113,11 @@ function ClientMixin:GetEntityGraph()
 end
 
 function ClientMixin:SendMessage(messageName, ...)
-    self.networkConnection:SendMessageToServer(messageName, ...)
+    self.clientNetworkConnection:SendMessageToServer(messageName, ...)
 end
 
 function ClientMixin:SendMessageToPeers(messageName, ...)
-    self.networkConnection:SendMessageToPeers(messageName, ...)
+    self.peerNetworkConnection:SendMessageToPeers(messageName, ...)
 end
 
 function ClientMixin:GetCursorLocation()

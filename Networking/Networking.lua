@@ -9,83 +9,43 @@ local NetworkingFrame = CreateFrame("Frame")
 NetworkingFrame:RegisterEvent("CHAT_MSG_ADDON")
 NetworkingFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-local g_activeClientConnections = {}
-
-local function AddClientConnection(clientConnection, lobbyCode)
-    if not g_activeClientConnections[lobbyCode] then
-        g_activeClientConnections[lobbyCode] = {}
-    end
-    g_activeClientConnections[lobbyCode][clientConnection] = true
-end
-
-local function RemoveClientConnection(clientConnection, lobbyCode)
-    if g_activeClientConnections[lobbyCode] then
-        g_activeClientConnections[lobbyCode][clientConnection] = nil
-        if not next(g_activeClientConnections[lobbyCode]) then
-            g_activeClientConnections[lobbyCode] = nil
-        end
-    end
-end
-
-local g_activeServerConnections = {}
-
-local function AddServerConnection(serverConnection, lobbyCode)
-    assert(serverConnection)
-    g_activeServerConnections[lobbyCode] = serverConnection
-end
-
-local function RemoveServerConnection(serverConnection, lobbyCode)
-    --g_activeServerConnections[lobbyCode] = nil
-end
-
-local function QueueServerMessageToAllClients(clientConnections, messageName, ...)
-    for clientConnection in pairs(clientConnections) do
-        clientConnection:OnServerMessageReceived(messageName, ...)
-    end
-end
-
-local function QueuePeerMessageToAll(fromPlayer, serverConnection, clientConnections, messageName, ...)
-    if serverConnection then
-        serverConnection:OnMessageReceived(messageName, ...)
-    end
-    if clientConnections then
-        for clientConnection in pairs(clientConnections) do
-            clientConnection:OnPeerMessageReceived(fromPlayer, messageName, ...)
-        end
-    end
-end
+local g_clientConnection = {}
+local g_serverConnection = {}
+local g_peerConnection = {}
 
 local function OnEvent(self, event, ...)
     if event == "CHAT_MSG_ADDON" then
         local prefix, text, channel, sender, target, zoneChannelID, localID, name, instanceID = ...
         if prefix == PREFIX then
             if channel == "PARTY" then
-                local target = text:sub(1, 1)
+                local targetCode = text:sub(1, 1)
                 local lobbyCode = DecodeLobbyCode(text:sub(2, 5))
                 local messageByte = text:sub(6, 6)
                 local data = text:sub(7)
-                if target == TARGET_CODE_SERVER then
-                    local serverConnection = g_activeServerConnections[lobbyCode]
+                local ambiguatedSender = Ambiguate(sender, "short")
+                if targetCode == TARGET_CODE_SERVER then
+                    local serverConnection = g_serverConnection[lobbyCode]
                     if serverConnection then
                         local messageInfo = GetMessageByByte(messageByte)
                         if messageInfo and messageInfo.ValidConnections[TARGET_CODE_SERVER] then
-                            serverConnection:OnMessageReceived(messageInfo.MessageName, messageInfo.Deserialize(data))
+                            serverConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
                         end
                     end
-                elseif target == TARGET_CODE_ALL_CLIENTS then
-                    local clientConnections = g_activeClientConnections[lobbyCode]
-                    if clientConnections then
+                elseif targetCode == TARGET_CODE_ALL_CLIENTS then
+                    local clientConnection = g_clientConnection[lobbyCode]
+                    if clientConnection then
                         local messageInfo = GetMessageByByte(messageByte)
                         if messageInfo and messageInfo.ValidConnections[TARGET_CODE_ALL_CLIENTS] then
-                            QueueServerMessageToAllClients(clientConnections, messageInfo.MessageName, messageInfo.Deserialize(data))
+                            clientConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
                         end
                     end
-                elseif target == TARGET_CODE_SERVER_AND_PEERS then
-                    local messageInfo = GetMessageByByte(messageByte)
-                    if messageInfo and messageInfo.ValidConnections[TARGET_CODE_SERVER_AND_PEERS] then
-                        local serverConnection = g_activeServerConnections[lobbyCode]
-                        local clientConnections = g_activeClientConnections[lobbyCode]
-                        QueuePeerMessageToAll(Ambiguate(sender, "short"), serverConnection, clientConnections, messageInfo.MessageName, messageInfo.Deserialize(data))
+                elseif targetCode == TARGET_CODE_SERVER_AND_PEERS then
+                    local peerConnection = g_peerConnection[lobbyCode]
+                    if peerConnection then
+                        local messageInfo = GetMessageByByte(messageByte)
+                        if messageInfo and messageInfo.ValidConnections[TARGET_CODE_SERVER_AND_PEERS] then
+                            peerConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
+                        end
                     end
                 end
             end
@@ -115,23 +75,17 @@ local function SendMessageToPeers(lobbyCode, messageByte, data)
 end
 
 function CloseAllNetworkConnections()
-    g_activeClientConnections = {}
-    g_activeServerConnections = {}
+    g_clientConnection = {}
+    g_serverConnection = {}
+    g_peerConnection = {}
 end
 
-function CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onServerMessageReceivedCallback, onPeerMessageReceivedCallback)
+function CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onServerMessageReceivedCallback)
     local ClientNetworkConnection = {}
 
     if onLocalServerMessageReceivedCallback then
         function ClientNetworkConnection:SendMessageToServer(messageName, ...)
             onLocalServerMessageReceivedCallback(messageName, ...)
-        end
-
-        function ClientNetworkConnection:SendMessageToPeers(messageName, ...)
-            onLocalServerMessageReceivedCallback(messageName, ...)
-            local messageInfo = GetMessageByName(messageName)
-            local data = messageInfo.Serialize(...)
-            SendMessageToPeers(lobbyCode, messageInfo.MessageByte, data)
         end
     else
         function ClientNetworkConnection:SendMessageToServer(messageName, ...)
@@ -139,51 +93,85 @@ function CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageRec
             local data = messageInfo.Serialize(...)
             SendMessageToServer(lobbyCode, messageInfo.MessageByte, data)
         end
+    end
 
-        function ClientNetworkConnection:SendMessageToPeers(messageName, ...)
+    function ClientNetworkConnection:Disconnect()
+        g_clientConnection[lobbyCode] = nil
+    end
+
+    function ClientNetworkConnection:OnMessageReceived(fromPlayer, messageName, ...)
+        if owningPlayer ~= fromPlayer then
+            onServerMessageReceivedCallback(messageName, ...)
+        end
+    end
+
+    g_clientConnection[lobbyCode] = ClientNetworkConnection
+
+    return ClientNetworkConnection
+end
+
+function CreatePeerConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onPeerMessageReceivedCallback)
+    local PeerNetworkConnection = {}
+
+    if onLocalServerMessageReceivedCallback then
+        function PeerNetworkConnection:SendMessageToPeers(messageName, ...)
+            onLocalServerMessageReceivedCallback(messageName, ...)
+            local messageInfo = GetMessageByName(messageName)
+            local data = messageInfo.Serialize(...)
+            SendMessageToPeers(lobbyCode, messageInfo.MessageByte, data)
+        end
+    else
+        function PeerNetworkConnection:SendMessageToPeers(messageName, ...)
             local messageInfo = GetMessageByName(messageName)
             local data = messageInfo.Serialize(...)
             SendMessageToPeers(lobbyCode, messageInfo.MessageByte, data)
         end
     end
 
-    function ClientNetworkConnection:Disconnect()
-        RemoveClientConnection(self, lobbyCode)
+    function PeerNetworkConnection:Disconnect()
+        g_peerConnection[lobbyCode] = nil
     end
 
-    function ClientNetworkConnection:OnServerMessageReceived(messageName, ...)
-        onServerMessageReceivedCallback(messageName, ...)
-    end
-
-    function ClientNetworkConnection:OnPeerMessageReceived(fromPlayer, messageName, ...)
+    function PeerNetworkConnection:OnMessageReceived(fromPlayer, messageName, ...)
         if owningPlayer ~= fromPlayer then
             onPeerMessageReceivedCallback(messageName, ...)
         end
     end
 
-    AddClientConnection(ClientNetworkConnection, lobbyCode)
+    g_peerConnection[lobbyCode] = PeerNetworkConnection
 
-    return ClientNetworkConnection
+    return PeerNetworkConnection
 end
 
-function CreateServerConnection(lobbyCode, onMessageReceivedCallback)
+function CreateServerConnection(owningPlayer, lobbyCode, onLocalClientMessageReceivedCallback, onClientMessageReceivedCallback)
     local ServerNetworkConnection = {}
 
-    function ServerNetworkConnection:SendMessageToAllClients(messageName, ...)
-        local messageInfo = GetMessageByName(messageName)
-        local data = messageInfo.Serialize(...)
-        SendMessageToAllClients(lobbyCode, messageInfo.MessageByte, data)
+    if onLocalClientMessageReceivedCallback then
+        function ServerNetworkConnection:SendMessageToAllClients(messageName, ...)
+            onLocalClientMessageReceivedCallback(messageName, ...)
+            local messageInfo = GetMessageByName(messageName)
+            local data = messageInfo.Serialize(...)
+            SendMessageToAllClients(lobbyCode, messageInfo.MessageByte, data)
+        end
+    else
+        function ServerNetworkConnection:SendMessageToAllClients(messageName, ...)
+            local messageInfo = GetMessageByName(messageName)
+            local data = messageInfo.Serialize(...)
+            SendMessageToAllClients(lobbyCode, messageInfo.MessageByte, data)
+        end
     end
 
     function ServerNetworkConnection:Disconnect()
-        RemoveServerConnection(self, lobbyCode)
+        g_serverConnection[lobbyCode] = nil
     end
 
-    function ServerNetworkConnection:OnMessageReceived(messageName, ...)
-        onMessageReceivedCallback(messageName, ...)
+    function ServerNetworkConnection:OnMessageReceived(fromPlayer, messageName, ...)
+        if owningPlayer ~= fromPlayer then
+            onClientMessageReceivedCallback(messageName, ...)
+        end
     end
 
-    AddServerConnection(ServerNetworkConnection, lobbyCode)
+    g_serverConnection[lobbyCode] = ServerNetworkConnection
 
     return ServerNetworkConnection
 end

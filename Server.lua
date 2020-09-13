@@ -36,11 +36,22 @@ function ServerMixin:BeginGame(playersInLobbby)
 end
 
 function ServerMixin:SendMessageToAllClients(messageName, ...)
-    self.networkConnection:SendMessageToAllClients(messageName, ...)
+    self.serverNetworkConnection:SendMessageToAllClients(messageName, ...)
 end
 
-function ServerMixin:CreateNetworkConnection(lobbyCode)
-    self.networkConnection = CreateServerConnection(lobbyCode, function(messageName, ...) self:AddMessageToQueue(messageName, ...) end)
+function ServerMixin:CreateNetworkConnection(lobbyCode, localClient)
+    local localClientOnMessageReceived = localClient and function(messageName, ...) localClient:AddMessageToQueue(messageName, ...) end or nil
+
+    local function OnMessageReceived(messageName, ...)
+        self:AddMessageToQueue(messageName, ...)
+    end
+
+    local onClientMessageReceivedCallback = OnMessageReceived
+    self.serverNetworkConnection = CreateServerConnection(UnitName("player"), lobbyCode, localClientOnMessageReceived, onClientMessageReceivedCallback)
+
+    local onPeerMessageReceived = OnMessageReceived
+    -- Never used to send, just listens
+    self.peerNetworkConnection = CreatePeerConnection(UnitName("player"), lobbyCode, nil, onPeerMessageReceived)
 end
 
 function ServerMixin:AddMessageToQueue(messageName, ...)
