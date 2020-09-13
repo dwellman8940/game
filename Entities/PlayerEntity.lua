@@ -6,25 +6,15 @@ PlayerEntityMixin = CreateFromMixins(GameEntityMixin)
 
 function PlayerEntityMixin:Render(delta) -- override
     self:CreateRenderData()
-
-    -- todo: better drawing
-    local client = self:GetClient()
-    self.renderData.frame:SetPoint("CENTER", client:GetRootFrame(), "BOTTOMLEFT", self:GetWorldLocation():GetXY())
 end
 
 function PlayerEntityMixin:CreateRenderData()
-    if self.renderData then
+    if self.textureComponent then
         return
     end
 
-    self.renderData = {}
-
-    local client = self:GetClient()
-    self.renderData.frame = CreateFrame("Frame", nil, client:GetRootFrame())
-    self.renderData.frame:SetWidth(100)
-    self.renderData.frame:SetHeight(100)
-
-    self.renderData.texture = self.renderData.frame:CreateTexture(nil, "ARTWORK", -8)
+    self.textureComponent = CreateGameEntityComponent(TextureComponentMixin, self)
+    self.textureComponent:SetSize(100, 100)
 
     local colorTable = {
         {1, 0, 0, 1},
@@ -32,9 +22,8 @@ function PlayerEntityMixin:CreateRenderData()
         {0, 0, 1, 1},
         {1, 1, 1, 1},
     }
-    
-    self.renderData.texture:SetColorTexture(unpack(colorTable[self:GetPlayerID()]))
-    self.renderData.texture:SetAllPoints(self.renderData.frame)
+
+    self.textureComponent:SetColorTexture(unpack(colorTable[self:GetPlayerID()]))
 end
 
 function PlayerEntityMixin:SetPlayerID(playerID)

@@ -46,12 +46,7 @@ function ServerMixin:CreateNetworkConnection(lobbyCode, localClient)
         self:AddMessageToQueue(messageName, ...)
     end
 
-    local onClientMessageReceivedCallback = OnMessageReceived
-    self.serverNetworkConnection = CreateServerConnection(UnitName("player"), lobbyCode, localClientOnMessageReceived, onClientMessageReceivedCallback)
-
-    local onPeerMessageReceived = OnMessageReceived
-    -- Never used to send, just listens
-    self.peerNetworkConnection = CreatePeerConnection(UnitName("player"), lobbyCode, nil, onPeerMessageReceived)
+    self.serverNetworkConnection = CreateServerConnection(UnitName("player"), lobbyCode, localClientOnMessageReceived, OnMessageReceived)
 end
 
 function ServerMixin:AddMessageToQueue(messageName, ...)
@@ -78,7 +73,7 @@ function ServerMixin:Tick(delta)
 
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
-        entity:TickServer(delta)
+        entity:TickServerInternal(delta)
     end
 end
 

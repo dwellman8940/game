@@ -13,6 +13,15 @@ local g_clientConnection = {}
 local g_serverConnection = {}
 local g_peerConnection = {}
 
+local function AddMesageToPeersAndServer(ambiguatedSender, peerConnection, serverConnection, messageName, ...)
+    if peerConnection then
+        peerConnection:OnMessageReceived(ambiguatedSender, messageName, ...)
+    end
+    if serverConnection then
+        serverConnection:OnMessageReceived(ambiguatedSender, messageName, ...)
+    end
+end
+
 local function OnEvent(self, event, ...)
     if event == "CHAT_MSG_ADDON" then
         local prefix, text, channel, sender, target, zoneChannelID, localID, name, instanceID = ...
@@ -41,10 +50,11 @@ local function OnEvent(self, event, ...)
                     end
                 elseif targetCode == TARGET_CODE_SERVER_AND_PEERS then
                     local peerConnection = g_peerConnection[lobbyCode]
-                    if peerConnection then
+                    local serverConnection = g_serverConnection[lobbyCode]
+                    if peerConnection or serverConnection then
                         local messageInfo = GetMessageByByte(messageByte)
                         if messageInfo and messageInfo.ValidConnections[TARGET_CODE_SERVER_AND_PEERS] then
-                            peerConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
+                            AddMesageToPeersAndServer(ambiguatedSender, peerConnection, serverConnection, messageInfo.MessageName, messageInfo.Deserialize(data))
                         end
                     end
                 end

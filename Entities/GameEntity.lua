@@ -18,10 +18,25 @@ function GameEntityMixin:Initialize(parentEntity, relativeLocation)
     self:SetRelativeLocation(relativeLocation or CreateVector2(0, 0))
     self.parentEntity = parentEntity
     self.childEntities = {}
+    self.components = {}
 
     if self.parentEntity then
         self.parentEntity:AddChildObject(self)
     end
+end
+
+function GameEntityMixin:DestroyInternal()
+    for i, childEntity in ipairs(self:GetChildEntities()) do
+        childEntity:DestroyInternal()
+    end
+    for i, component in ipairs(self:GetAllComponents()) do
+        component:Destroy()
+    end
+    self:Destroy()
+end
+
+function GameEntityMixin:Destroy()
+    -- Override to handle being destroyed
 end
 
 function GameEntityMixin:SetRelativeLocation(relativeLocation)
@@ -50,6 +65,15 @@ function GameEntityMixin:GetParentEntity()
     return self.parentEntity
 end
 
+function GameEntityMixin:AddComponent(entityComponent)
+    entityComponent:SetGameEntityOwner(self)
+    table.insert(self.components, entityComponent)
+end
+
+function GameEntityMixin:GetAllComponents()
+    return self.components
+end
+
 function GameEntityMixin:GetClient()
     -- only non-nil if this is running on a client
     return self.client
@@ -64,6 +88,27 @@ function GameEntityMixin:AddChildObject(childEntity)
     assert(childEntity:GetParentEntity() == self)
 
     table.insert(self.childEntities, childEntity)
+end
+
+function GameEntityMixin:TickServerInternal(delta)
+    self:TickServer(delta)
+    for i, component in ipairs(self.components) do
+        component:TickServer(delta)
+    end
+end
+
+function GameEntityMixin:TickClientInternal(delta)
+    self:TickClient(delta)
+    for i, component in ipairs(self.components) do
+        component:TickClient(delta)
+    end
+end
+
+function GameEntityMixin:RenderInternal(delta)
+    self:Render(delta)
+    for i, component in ipairs(self.components) do
+        component:Render(delta)
+    end
 end
 
 function GameEntityMixin:TickServer(delta)

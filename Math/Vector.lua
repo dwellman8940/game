@@ -4,8 +4,11 @@ setfenv(1, envTable)
 
 local Vector2Mixin = {}
 
+local Vector2Metatable = {}
+
 function CreateVector2(x, y)
     local vector2 = CreateFromMixins(Vector2Mixin)
+    setmetatable(vector2, Vector2Metatable)
     vector2:SetXY(x, y)
     return vector2
 end
@@ -36,4 +39,8 @@ end
 
 function Vector2Mixin:Dot(other)
     return Dot(self.x, self.y, other.x, other.y)
+end
+
+function Vector2Metatable:__add(other)
+    return CreateVector2(self.x + other.x, self.y + other.y)
 end

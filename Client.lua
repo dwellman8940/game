@@ -15,6 +15,8 @@ local RenderFrame = CreateFrame("Frame", nil, ClientFrame)
 RenderFrame:SetClipsChildren(true)
 RenderFrame:SetAllPoints(ClientFrame)
 
+TexturePool.Initialize(RenderFrame)
+
 local ClientMixin = {}
 local ClientMessageHandlers = {}
 
@@ -33,6 +35,13 @@ function ClientMixin:Initialize()
 end
 
 function ClientMixin:ResetGame()
+    local entityGraph = self:GetEntityGraph()
+    if entityGraph then
+        for i, entity in entityGraph:EnumerateAll() do
+            entity:DestroyInternal()
+        end
+    end
+
     self.entityGraph = CreateEntityGraph()
 
     self.remotePlayers = {}
@@ -91,7 +100,7 @@ end
 function ClientMixin:Render(delta)
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
-        entity:Render(delta)
+        entity:RenderInternal(delta)
     end
 end
 
@@ -100,7 +109,7 @@ function ClientMixin:Tick(delta)
 
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
-        entity:TickClient(delta)
+        entity:TickClientInternal(delta)
     end
 end
 
