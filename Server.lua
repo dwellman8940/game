@@ -100,9 +100,9 @@ function ServerMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
     return gameEntity
 end
 
-function ServerMessageHandlers:OnMovement(playerID, x, y)
+function ServerMessageHandlers:OnMovement(playerID, location, velocity)
     local player = self.players[playerID]
     if player then
-        player:SetWorldLocation(CreateVector2(x, y))
+        player:ApplyRemoveMovement(location, velocity)
     end
 end

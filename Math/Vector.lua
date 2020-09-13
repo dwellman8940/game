@@ -22,9 +22,12 @@ function Vector2Mixin:GetXY()
     return self.x, self.y
 end
 
-function Vector2Mixin:Equals(other)
-    return self.x == other.x
-        and self.y == other.y
+function Vector2Mixin:GetX()
+    return self.x
+end
+
+function Vector2Mixin:GetY()
+    return self.y
 end
 
 local function Dot(leftX, leftY, rightX, rightY)
@@ -43,4 +46,16 @@ end
 
 function Vector2Metatable:__add(other)
     return CreateVector2(self.x + other.x, self.y + other.y)
+end
+
+function Vector2Metatable.__mul(left, right)
+    if type(left) == "table" then
+        return CreateVector2(left.x * right, left.y * right)
+    end
+    return CreateVector2(right.x * left, right.y * left)
+end
+
+function Vector2Metatable:__eq(other)
+    return self.x == other.x
+        and self.y == other.y
 end

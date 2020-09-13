@@ -41,6 +41,9 @@ function ClientMixin:ResetGame()
             entity:DestroyInternal()
         end
     end
+    self.localPlayer = nil
+    ClientFrame:EnableKeyboard(false)
+
 
     self.entityGraph = CreateEntityGraph()
 
@@ -149,9 +152,44 @@ function ClientMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
 end
 
 function ClientMixin:BeginGame()
-    --self.localPlayer = self:CreateEntity(PlayerEntityMixin)
 
-    --self:BindKeyboardToPlayer(self.localPlayer)
+end
+
+function ClientMixin:BindKeyboardToPlayer()
+    ClientFrame:EnableKeyboard(true)
+
+    local function OnKeyDown(f, key)
+        ClientFrame:SetPropagateKeyboardInput(false)
+        if key == "A" then
+            self.localPlayer:SetMovingLeft(true)
+        elseif key == "D" then
+            self.localPlayer:SetMovingRight(true)
+        elseif key == "W" then
+            self.localPlayer:SetMovingForward(true)
+        elseif key == "S" then
+            self.localPlayer:SetMovingBackward(true)
+        else
+            ClientFrame:SetPropagateKeyboardInput(true)
+        end
+    end
+
+    local function OnKeyUp(f, key)
+        ClientFrame:SetPropagateKeyboardInput(false)
+        if key == "A" then
+            self.localPlayer:SetMovingLeft(false)
+        elseif key == "D" then
+            self.localPlayer:SetMovingRight(false)
+        elseif key == "W" then
+            self.localPlayer:SetMovingForward(false)
+        elseif key == "S" then
+            self.localPlayer:SetMovingBackward(false)
+        else
+            ClientFrame:SetPropagateKeyboardInput(false)
+        end
+    end
+
+    ClientFrame:SetScript("OnKeyDown", OnKeyDown)
+    ClientFrame:SetScript("OnKeyUp", OnKeyUp)
 end
 
 function ClientMessageHandlers:ResetGame()
@@ -163,6 +201,7 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         self.localPlayer = self:CreateEntity(PlayerEntityMixin)
         self.localPlayer:SetPlayerID(playerID)
         self.localPlayer:MarkAsLocalPlayer()
+        self:BindKeyboardToPlayer(self.localPlayer)
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)
@@ -171,9 +210,9 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
     end
 end
 
-function ClientMessageHandlers:OnMovement(playerID, x, y)
+function ClientMessageHandlers:OnMovement(playerID, location, velocity)
     local remotePlayer = self.remotePlayers[playerID]
     if remotePlayer then
-        remotePlayer:SetWorldLocation(CreateVector2(x, y))
+        remotePlayer:ApplyRemoveMovement(location, velocity)
     end
 end

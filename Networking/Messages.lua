@@ -189,15 +189,17 @@ AddMessage(
 AddMessage(
     "OnMovement",
 
-    function(playerID, x, y)
-        return EncodeByte(playerID) .. EncodeFloat(x) .. EncodeFloat(y)
+    function(playerID, location, velocity)
+        return EncodeByte(playerID) .. EncodeFloat(location:GetX()) .. EncodeFloat(location:GetY()) .. EncodeFloat(velocity:GetX()) .. EncodeFloat(velocity:GetY())
     end,
 
     function(messageData)
         local playerID = messageData:byte(1, 1)
-        local x = messageData:sub(2, 5)
-        local y = messageData:sub(6, 9)
-        return playerID, DecodeFloat(x), DecodeFloat(y)
+        local locationX = messageData:sub(2, 5)
+        local locationY = messageData:sub(6, 9)
+        local velocityX = messageData:sub(10, 13)
+        local velocityY = messageData:sub(14, 17)
+        return playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
     end,
     
     TARGET_CODE_SERVER_AND_PEERS
