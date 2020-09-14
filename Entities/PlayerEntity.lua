@@ -15,6 +15,7 @@ function PlayerEntityMixin:CreateRenderData()
 
     self.textureComponent = CreateGameEntityComponent(TextureComponentMixin, self)
     self.textureComponent:SetSize(40, 70)
+    self.textureComponent:SetRenderLayer(self:IsLocalPlayer() and 32 or 8)
 
     local colorTable = {
         {1, 0, 0, 1},
@@ -50,8 +51,9 @@ function PlayerEntityMixin:GetPlayerID()
     return self.playerID
 end
 
-function PlayerEntityMixin:MarkAsLocalPlayer()
+function PlayerEntityMixin:MarkAsLocalPlayer(worldFrame)
     self.isLocalPlayer = true
+    self.cameraComponent = CreateGameEntityComponent(CameraComponentMixin, self, worldFrame)
 end
 
 function PlayerEntityMixin:IsLocalPlayer()
@@ -75,7 +77,7 @@ function PlayerEntityMixin:ProcessPendingMovement(delta)
         y = y - 1
     end
 
-    local playerSpeed = 8000 * delta
+    local playerSpeed = 10000 * delta
     self.velocity = CreateVector2(x * playerSpeed, y * playerSpeed)
 end
 

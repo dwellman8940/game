@@ -7,15 +7,23 @@ ClientFrame:SetWidth(800)
 ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
 
-local Background = ClientFrame:CreateTexture(nil, "BACKGROUND", -8)
-Background:SetColorTexture(0, 0, 0, 1)
-Background:SetAllPoints(ClientFrame)
-
 local RenderFrame = CreateFrame("Frame", nil, ClientFrame)
 RenderFrame:SetClipsChildren(true)
 RenderFrame:SetAllPoints(ClientFrame)
 
-TexturePool.Initialize(RenderFrame)
+local WorldFrame = CreateFrame("Frame", nil, RenderFrame)
+WorldFrame:SetPoint("CENTER")
+WorldFrame:SetWidth(1024)
+WorldFrame:SetHeight(1024)
+
+--TODO: Should not be here
+local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", -8)
+Background:SetTexture("Interface/Addons/Game/Assets/Textures/grid", "REPEAT", "REPEAT")
+Background:SetHorizTile(true)
+Background:SetVertTile(true)
+Background:SetAllPoints(WorldFrame)
+
+TexturePool.Initialize(WorldFrame, RenderFrame)
 
 local ClientMixin = {}
 local ClientMessageHandlers = {}
@@ -88,7 +96,7 @@ function ClientMixin:TryTick()
     local delta = now - self.lastTickTime
     do
         self.elapsed = self.elapsed + delta
-    
+
         while self.elapsed >= SECONDS_PER_TICK do
             self.elapsed = self.elapsed - SECONDS_PER_TICK
             self:Tick(SECONDS_PER_TICK)
@@ -200,7 +208,7 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
     if playerName == UnitName("player") then
         self.localPlayer = self:CreateEntity(PlayerEntityMixin)
         self.localPlayer:SetPlayerID(playerID)
-        self.localPlayer:MarkAsLocalPlayer()
+        self.localPlayer:MarkAsLocalPlayer(WorldFrame)
         self:BindKeyboardToPlayer(self.localPlayer)
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)

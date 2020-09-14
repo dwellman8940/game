@@ -4,13 +4,13 @@ setfenv(1, envTable)
 
 GameEntityComponentMixin = {}
 
-function CreateGameEntityComponent(componentType, owningEntity)
+function CreateGameEntityComponent(componentType, owningEntity, ...)
     local gameEntityComponent = CreateFromMixins(componentType)
-    gameEntityComponent:Initialize(owningEntity)
+    gameEntityComponent:Initialize(owningEntity, ...)
     return gameEntityComponent
 end
 
-function GameEntityComponentMixin:Initialize(owningEntity)
+function GameEntityComponentMixin:Initialize(owningEntity, ...)
     owningEntity:AddComponent(self)
     self.relativeLocation = CreateVector2(0, 0)
 end
