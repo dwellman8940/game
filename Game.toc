@@ -3,6 +3,8 @@
 Util/Debug.lua
 Util/Math.lua
 Util/TexturePool.lua
+Util/Rendering.lua
+Util/Texture.lua
 
 Networking/Messages.lua
 Networking/Networking.lua
@@ -14,6 +16,7 @@ Components/GameEntityComponent.lua
 Entities/GameEntity.lua
 Entities/EntityGraph.lua
 
+Components/GeometryComponent.lua
 Components/TextureComponent.lua
 Components/CameraComponent.lua
 

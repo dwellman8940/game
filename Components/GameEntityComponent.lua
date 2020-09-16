@@ -4,8 +4,15 @@ setfenv(1, envTable)
 
 GameEntityComponentMixin = {}
 
+local NameMetatable = {
+    __tostring = function(t)
+        return t:GetName()
+    end,
+}
+
 function CreateGameEntityComponent(componentType, owningEntity, ...)
     local gameEntityComponent = CreateFromMixins(componentType)
+    setmetatable(gameEntityComponent, NameMetatable)
     gameEntityComponent:Initialize(owningEntity, ...)
     return gameEntityComponent
 end
@@ -17,6 +24,10 @@ end
 
 function GameEntityComponentMixin:Destroy()
     -- Override to handle being destroyed
+end
+
+function GameEntityComponentMixin:GetName()
+    return "GameEntityComponent"
 end
 
 function GameEntityComponentMixin:SetGameEntityOwner(owningEntity)

@@ -15,7 +15,7 @@ function PlayerEntityMixin:CreateRenderData()
 
     self.textureComponent = CreateGameEntityComponent(TextureComponentMixin, self)
     self.textureComponent:SetSize(40, 70)
-    self.textureComponent:SetRenderLayer(self:IsLocalPlayer() and 32 or 8)
+    self.textureComponent:SetRenderLayer(self:IsLocalPlayer() and 32 or 31)
 
     local colorTable = {
         {1, 0, 0, 1},
@@ -25,6 +25,10 @@ function PlayerEntityMixin:CreateRenderData()
     }
 
     self.textureComponent:SetColorTexture(unpack(colorTable[self:GetPlayerID()]))
+end
+
+function PlayerEntityMixin:GetName()
+    return "Player" .. (self:GetPlayerID() or -1)
 end
 
 function PlayerEntityMixin:SetMovingLeft(isMovingLeft)
@@ -86,7 +90,7 @@ function PlayerEntityMixin:TickClient(delta)
         self:ProcessPendingMovement(delta)
 
         self:SetWorldLocation(self:GetWorldLocation() + self.velocity * delta)
-
+        
         local worldLocation = self:GetWorldLocation()
         if not self.lastSentVelocity or self.lastSentVelocity ~= self.velocity then
             self.lastSentVelocity = self.velocity

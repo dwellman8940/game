@@ -55,7 +55,22 @@ function Vector2Metatable.__mul(left, right)
     return CreateVector2(right.x * left, right.y * left)
 end
 
+function Vector2Metatable.__div(left, right)
+    if type(left) == "table" then
+        return CreateVector2(left.x / right, left.y / right)
+    end
+    return CreateVector2(right.x / left, right.y / left)
+end
+ 
 function Vector2Metatable:__eq(other)
     return self.x == other.x
         and self.y == other.y
+end
+
+function Vector2Metatable:__unm()
+    return CreateVector2(-self.x, -self.y)
+end
+
+function Vector2Metatable:__tostring()
+    return ("Vector2: %f %f"):format(self.x, self.y)
 end

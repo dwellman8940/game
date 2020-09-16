@@ -210,6 +210,9 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         self.localPlayer:SetPlayerID(playerID)
         self.localPlayer:MarkAsLocalPlayer(WorldFrame)
         self:BindKeyboardToPlayer(self.localPlayer)
+
+        local testCollision = self:CreateEntity(GameEntityMixin, nil, CreateVector2(0, 0))
+        CreateGameEntityComponent(GeometryComponentMixin, testCollision)
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)

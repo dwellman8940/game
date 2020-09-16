@@ -2,6 +2,12 @@ local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
+local NameMetatable = {
+    __tostring = function(t)
+        return t:GetName()
+    end,
+}
+
 GameEntityMixin = {}
 
 function GameEntityMixin:InitializeOnServer(server, parentEntity, relativeLocation)
@@ -15,6 +21,7 @@ function GameEntityMixin:InitializeOnClient(client, parentEntity, relativeLocati
 end
 
 function GameEntityMixin:Initialize(parentEntity, relativeLocation)
+    setmetatable(self, NameMetatable)
     self:SetRelativeLocation(relativeLocation or CreateVector2(0, 0))
     self.parentEntity = parentEntity
     self.childEntities = {}
@@ -23,6 +30,10 @@ function GameEntityMixin:Initialize(parentEntity, relativeLocation)
     if self.parentEntity then
         self.parentEntity:AddChildObject(self)
     end
+end
+
+function GameEntityMixin:GetName()
+    return "GameEntity"
 end
 
 function GameEntityMixin:DestroyInternal()

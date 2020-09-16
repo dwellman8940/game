@@ -19,9 +19,7 @@ function TextureComponentMixin:Destroy() -- override
 end
 
 function TextureComponentMixin:Render(delta) -- override
-     local offsetX, offsetY = self:GetWorldLocation():GetXY()
-     local scale = self.texture:GetScale()
-     PixelUtil.SetPoint(self.texture, "CENTER", self.texture:GetParent(), "BOTTOMLEFT", offsetX / scale, offsetY / scale)
+     Texture.DrawAtWorldPoint(self.texture, self:GetWorldLocation())
 end
 
 function TextureComponentMixin:SetSize(width, height)
