@@ -13,20 +13,25 @@ function Debug.Print(...)
     print(("|cBBBBBBBB%s:|r %s"):format(UnitName("player"), s))
 end
 
+function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+    local line = TexturePool.AcquireLineTexture()
+
+    Texture.DrawLineAtWorldPoints(line, startWorldLocation, endWorldLocation)
+
+    line:SetThickness(2)
+    line:SetColorTexture(1, 1, 1, 1)
+    line:SetGradient("HORIZONTAL", firstR or 1, firstG or 0, firstB or 0, secondR or 0, secondG or 1, secondB or 0)
+    line:SetDrawLayer(Texture.RenderDrawToWidgetLayer(renderLayer or 41))
+
+    line:Show()
+
+    C_Timer.NewTimer(0, function() TexturePool.ReleaseLineTexture(line) end)
+end
+
 function Debug.DrawWorldVerts(worldLocation, verts, renderLayer)
-    renderLayer = renderLayer or 41
     for i, vert in ipairs(verts) do
         local nextVert = i ~= #vert and verts[i + 1] or verts[1]
-        local line = TexturePool.AcquireLineTexture()
-        
-        Texture.DrawLineAtWorldPoints(line, worldLocation + vert, worldLocation + nextVert)
 
-        line:SetThickness(2)
-        line:SetColorTexture(1, 1, 1, 1)
-        line:SetDrawLayer(Texture.RenderDrawToWidgetLayer(renderLayer))
-
-        line:Show()
-
-        C_Timer.NewTimer(0, function() TexturePool.ReleaseLineTexture(line) end)
+        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer)
     end
 end

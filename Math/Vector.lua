@@ -1,3 +1,5 @@
+local math_sqrt = math.sqrt
+
 local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
@@ -30,8 +32,31 @@ function Vector2Mixin:GetY()
     return self.y
 end
 
-local function Dot(leftX, leftY, rightX, rightY)
-	return leftX * rightX + leftY * rightY
+function Vector2Mixin:Cross(other)
+    return self.x * other.y - self.y * other.x
+end
+
+function Vector2Mixin:IsLeftOf(other)
+    return self:Cross(other) < 0
+end
+
+function Vector2Mixin:Normalize()
+    local length = self:Length()
+    self.x = self.x / length
+    self.y = self.y / length
+end
+
+function Vector2Mixin:GetNormal()
+    local length = self:Length()
+    return CreateVector2(self.x / length, self.y / length)
+end
+
+function Vector2Mixin:LengthSquared()
+    return self.x * self.x + self.y * self.y
+end
+
+function Vector2Mixin:Length()
+    return math_sqrt(self.x * self.x + self.y * self.y)
 end
 
 function Vector2Mixin:DistanceSquared(other)
@@ -41,11 +66,15 @@ function Vector2Mixin:DistanceSquared(other)
 end
 
 function Vector2Mixin:Dot(other)
-    return Dot(self.x, self.y, other.x, other.y)
+    return self.x * other.x + self.y * other.y
 end
 
 function Vector2Metatable:__add(other)
     return CreateVector2(self.x + other.x, self.y + other.y)
+end
+
+function Vector2Metatable:__sub(other)
+    return CreateVector2(self.x - other.x, self.y - other.y)
 end
 
 function Vector2Metatable.__mul(left, right)

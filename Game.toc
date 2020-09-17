@@ -16,6 +16,7 @@ Components/GameEntityComponent.lua
 Entities/GameEntity.lua
 Entities/EntityGraph.lua
 
+Components/OcclusionComponent.lua
 Components/GeometryComponent.lua
 Components/TextureComponent.lua
 Components/CameraComponent.lua

@@ -11,9 +11,13 @@ function GeometryComponentMixin:Initialize(owningEntity) -- override
 
     local SIZE = 50
     table.insert(self.vertices, CreateVector2(-SIZE, -SIZE))
-    table.insert(self.vertices, CreateVector2(SIZE, -SIZE))
-    table.insert(self.vertices, CreateVector2(SIZE, SIZE))
+    table.insert(self.vertices, CreateVector2(-SIZE * 2, 0))
     table.insert(self.vertices, CreateVector2(-SIZE, SIZE))
+    table.insert(self.vertices, CreateVector2(0, SIZE * 1.5))
+    table.insert(self.vertices, CreateVector2(SIZE, SIZE))
+    table.insert(self.vertices, CreateVector2(SIZE, -SIZE))
+
+    --table.insert(self.vertices, CreateVector2(SIZE * 2, -SIZE * 2))
 end
 
 function GeometryComponentMixin:Destroy() -- override
@@ -23,6 +27,10 @@ end
 
 function GeometryComponentMixin:GetName()
     return "GeometryComponent"
+end
+
+function GeometryComponentMixin:GetVertices()
+    return self.vertices
 end
 
 function GeometryComponentMixin:Render(delta) -- override
