@@ -1,7 +1,4 @@
-local math_sqrt = math.sqrt
-
 local addonName, envTable = ...
-setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
 local Vector2Mixin = {}
@@ -56,7 +53,7 @@ function Vector2Mixin:LengthSquared()
 end
 
 function Vector2Mixin:Length()
-    return math_sqrt(self.x * self.x + self.y * self.y)
+    return math.sqrt(self.x * self.x + self.y * self.y)
 end
 
 function Vector2Mixin:DistanceSquared(other)

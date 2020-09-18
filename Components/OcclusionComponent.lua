@@ -1,9 +1,4 @@
-local math_atan = math.atan2
-local math_max = math.max
-local math_min = math.min
-
 local addonName, envTable = ...
-setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
 OcclusionComponentMixin = CreateFromMixins(GameEntityComponentMixin)

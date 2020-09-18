@@ -1,5 +1,4 @@
 local addonName, envTable = ...
-setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
 -- No attempts to prevent sniffing here, don't play with cheaters!

@@ -1,7 +1,4 @@
-local math_ceil = math.ceil
-
 local addonName, envTable = ...
-setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
 local PixelUtil_SetPoint = PixelUtil.SetPoint
@@ -31,7 +28,7 @@ end
 
 function Texture.GetNumTexturesRequiredForConvexTriangleMesh(numVertices)
     local numTriangles = numVertices - 2
-    local numTextures = math_ceil(numTriangles * .5)
+    local numTextures = math.ceil(numTriangles * .5)
     return numTextures
 end
 

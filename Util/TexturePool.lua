@@ -1,7 +1,4 @@
-local table_insert = table.insert
-
 local addonName, envTable = ...
-setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
 TexturePool = {}
@@ -77,7 +74,7 @@ function TexturePool.Initialize(worldFrame, renderFrame)
 end
 
 function TexturePool.AcquireRenderTexture()
-    return g_renderTexturePool:Acquire()
+    return (g_renderTexturePool:Acquire())
 end
 
 function TexturePool.ReleaseRenderexture(texture)
@@ -91,7 +88,7 @@ end
 function TexturePool.AcquireWorldTextureArray(numTextures)
     local textures = {}
     for i = 1, numTextures do
-        table_insert(textures, TexturePool.AcquireWorldTexture())
+        table.insert(textures, TexturePool.AcquireWorldTexture())
     end
     return textures
 end

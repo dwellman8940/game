@@ -1,5 +1,4 @@
 local addonName, envTable = ...
-setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
 
 local MessagesByName = {}
@@ -101,7 +100,7 @@ local function EncodeFloat(float)
         exponent = exponent + 126
     end
 
-    return EncodeByteString(mantissa, 0, exponent * 128, sign * 128) 
+    return EncodeByteString(mantissa, 0, exponent * 128, sign * 128)
 end
 
 local function DecodeFloat(float)
@@ -201,6 +200,6 @@ AddMessage(
         local velocityY = messageData:sub(14, 17)
         return playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
     end,
-    
+
     TARGET_CODE_SERVER_AND_PEERS
 )
