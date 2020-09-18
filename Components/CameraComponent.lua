@@ -18,7 +18,7 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     self.fogTexture:SetParent(worldFrame)
     self.fogTexture:SetDrawLayer(Texture.RenderDrawToWidgetLayer(40))
     self.fogTexture:AddMaskTexture(self.maskTexture)
-    self.fogTexture:Show()
+    --self.fogTexture:Show()
 
     self.worldFrame = worldFrame
 end

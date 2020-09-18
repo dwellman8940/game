@@ -1,3 +1,5 @@
+local table_insert = table.insert
+
 local addonName, envTable = ...
 setmetatable(envTable, {__index = _G})
 setfenv(1, envTable)
@@ -56,14 +58,22 @@ do
 end
 
 function TexturePool.Initialize(worldFrame, renderFrame)
-    local function Reset(pool, texture)
+    local function TextureReset(pool, texture)
         texture:Hide()
         texture:ClearAllPoints()
+        texture:SetSnapToPixelGrid(true)
+        for vertexIndex = 1, 4 do
+            texture:SetVertexOffset(vertexIndex, 0, 0)
+        end
     end
-    g_renderTexturePool = CreateTexturePool(renderFrame, "ARTWORK", -8, nil, Reset)
-    g_worldTexturePool = CreateTexturePool(worldFrame, "ARTWORK", -8, nil, Reset)
-    g_maskTexturePool = CreateMaskTexturePool(worldFrame, "OVERLAY", 7, nil, Reset)
-    g_worldLinePool = CreateLineTexturePool(worldFrame, "OVERLAY", 7, nil, Reset)
+    local function LineReset(pool, line)
+        TextureReset(pool, line)
+    end
+    g_renderTexturePool = CreateTexturePool(renderFrame, "ARTWORK", -8, nil, TextureReset)
+    g_worldTexturePool = CreateTexturePool(worldFrame, "ARTWORK", -8, nil, TextureReset)
+    g_maskTexturePool = CreateMaskTexturePool(worldFrame, "OVERLAY", 7, nil, TextureReset)
+
+    g_worldLinePool = CreateLineTexturePool(worldFrame, "OVERLAY", 7, nil, LineReset)
 end
 
 function TexturePool.AcquireRenderTexture()
@@ -75,7 +85,15 @@ function TexturePool.ReleaseRenderexture(texture)
 end
 
 function TexturePool.AcquireWorldTexture()
-    return g_worldTexturePool:Acquire()
+    return (g_worldTexturePool:Acquire())
+end
+
+function TexturePool.AcquireWorldTextureArray(numTextures)
+    local textures = {}
+    for i = 1, numTextures do
+        table_insert(textures, TexturePool.AcquireWorldTexture())
+    end
+    return textures
 end
 
 function TexturePool.ReleaseWorldTexture(texture)
@@ -91,7 +109,7 @@ function TexturePool.ReleaseWorldMaskTexture(texture)
 end
 
 function TexturePool.AcquireLineTexture()
-    return g_worldLinePool:Acquire()
+    return (g_worldLinePool:Acquire())
 end
 
 function TexturePool.ReleaseLineTexture(texture)

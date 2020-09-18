@@ -35,3 +35,18 @@ function Debug.DrawWorldVerts(worldLocation, verts, renderLayer)
         Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer)
     end
 end
+
+function Debug.DrawConvexTriangleMesh(worldLocation, vertices)
+    Debug.DrawWorldVerts(worldLocation, vertices)
+
+    local numTriangles = #vertices - 2
+    for triangleIndex = 1, numTriangles do
+        local triVert1 = vertices[1]
+        local triVert2 = vertices[triangleIndex + 1]
+        local triVert3 = vertices[triangleIndex + 2]
+
+        Debug.DrawDebugLine(worldLocation + triVert1, worldLocation + triVert2, nil, 1, 1, 1, 1, 1, 1)
+        Debug.DrawDebugLine(worldLocation + triVert2, worldLocation + triVert3, nil, 1, 0, 1, 1, 0, 1)
+        Debug.DrawDebugLine(worldLocation + triVert3, worldLocation + triVert1, nil, 1, 1, 0, 1, 1, 0)
+    end
+end
