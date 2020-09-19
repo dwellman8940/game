@@ -29,8 +29,12 @@ Import("type")
 Import("print")
 Import("select")
 Import("tostring")
+Import("unpack")
 
 Import("CreateFrame")
+Import("GetTime")
+Import("UnitName")
+Import("IsInGroup")
 
 Import("C_ChatInfo")
 Import("C_Timer")
