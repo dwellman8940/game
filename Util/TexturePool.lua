@@ -5,6 +5,7 @@ TexturePool = {}
 
 local g_renderTexturePool
 local g_worldTexturePool
+local g_worldFontStringPool
 local g_maskTexturePool
 local g_worldLinePool
 
@@ -66,10 +67,14 @@ function TexturePool.Initialize(worldFrame, renderFrame)
     local function LineReset(pool, line)
         TextureReset(pool, line)
     end
+    function FontStringReset(framePool, fontString)
+        fontString:Hide();
+        fontString:ClearAllPoints();
+    end
     g_renderTexturePool = CreateTexturePool(renderFrame, "ARTWORK", -8, nil, TextureReset)
     g_worldTexturePool = CreateTexturePool(worldFrame, "ARTWORK", -8, nil, TextureReset)
+    g_worldFontStringPool = CreateFontStringPool(worldFrame, "OVERLAY", 0, nil, FontStringReset)
     g_maskTexturePool = CreateMaskTexturePool(worldFrame, "OVERLAY", 7, nil, TextureReset)
-
     g_worldLinePool = CreateLineTexturePool(worldFrame, "OVERLAY", 7, nil, LineReset)
 end
 
@@ -95,6 +100,20 @@ end
 
 function TexturePool.ReleaseWorldTexture(texture)
     g_worldTexturePool:Release(texture)
+end
+
+function TexturePool.ReleaseWorldTextureArray(textureArray)
+    for i, texture in ipairs(textureArray) do
+        TexturePool.ReleaseWorldTexture(texture)
+    end
+end
+
+function TexturePool.AcquireWorldFontString()
+    return (g_worldFontStringPool:Acquire())
+end
+
+function TexturePool.ReleaseWorldFontString(fontString)
+    g_worldFontStringPool:Release(fontString)
 end
 
 function TexturePool.AcquireWorldMaskTexture()

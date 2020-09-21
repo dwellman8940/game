@@ -12,14 +12,24 @@ function GeometryComponentMixin:Initialize(owningEntity) -- override
     table.insert(self.vertices, CreateVector2(-SIZE, -SIZE))
     table.insert(self.vertices, CreateVector2(-SIZE * 2, 0))
     table.insert(self.vertices, CreateVector2(-SIZE, SIZE))
+    table.insert(self.vertices, CreateVector2(-SIZE, SIZE * 5))
+    table.insert(self.vertices, CreateVector2(SIZE * 2, SIZE * 5))
     table.insert(self.vertices, CreateVector2(0, SIZE * 1.5))
     table.insert(self.vertices, CreateVector2(SIZE, SIZE))
     table.insert(self.vertices, CreateVector2(SIZE, -SIZE))
 
-    --table.insert(self.vertices, CreateVector2(SIZE * 2, -SIZE * 2))
+    table.insert(self.vertices, CreateVector2(SIZE * 2, -SIZE * 2))
+
+    self.convexVertexLists = Polygon.ConcaveDecompose(self.vertices)
 end
 
 function GeometryComponentMixin:Destroy() -- override
+    if self.textureList then
+        for i, textures in ipairs(self.textureList) do
+            TexturePool.ReleaseWorldTextureArray(textures)
+        end
+        self.textureList = nil
+    end
 
     GameEntityComponentMixin.Destroy(self)
 end
@@ -32,20 +42,43 @@ function GeometryComponentMixin:GetVertices()
     return self.vertices
 end
 
-function GeometryComponentMixin:Render(delta) -- override
-    --Debug.DrawConvexTriangleMesh(self:GetWorldLocation(), self.vertices)
+function GeometryComponentMixin:GetConvexVertexList()
+    return self.convexVertexLists
+end
 
-    if not self.textures then
-        local numTextures = Texture.GetNumTexturesRequiredForConvexTriangleMesh(#self.vertices)
-        self.textures = TexturePool.AcquireWorldTextureArray(numTextures)
-        
-        for i, texture in ipairs(self.textures) do
-            texture:SetColorTexture(1, 1, 1, .8)
-            texture:SetDrawLayer(Texture.RenderDrawToWidgetLayer(20))
-            texture:Show()
+function GeometryComponentMixin:Render(delta) -- override
+    for i, vertices in ipairs(self.convexVertexLists) do
+        --Debug.DrawWorldVerts(self:GetWorldLocation(), vertices)
+    end
+    -- Debug.DrawWorldVerts(self:GetWorldLocation(), self.vertices)
+
+    if not self.textureList then
+        self.textureList = {}
+        for i, vertices in ipairs(self.convexVertexLists) do
+            local numTextures = Texture.GetNumTexturesRequiredForConvexTriangleMesh(#vertices)
+            local textures = TexturePool.AcquireWorldTextureArray(numTextures)
+            table.insert(self.textureList, textures)
+            
+            for i, texture in ipairs(textures) do
+                texture:SetColorTexture(1, 0, 0, .8)
+                texture:SetDrawLayer(Texture.RenderDrawToWidgetLayer(20))
+                texture:Show()
+            end
+
+            Texture.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices, textures)
+
+            for i, vertex in ipairs(vertices) do
+                local fontString = TexturePool.AcquireWorldFontString()
+                fontString:SetFontObject("GameFontNormal")
+                fontString:SetText(i)
+                Texture.DrawAtWorldPoint(fontString, self:GetWorldLocation() + vertex)
+                fontString:Show()
+            end
+
+            --return
         end
 
-        Texture.DrawConvexTriangleMesh(self:GetWorldLocation(), self.vertices, self.textures)
+
     end
 end
 

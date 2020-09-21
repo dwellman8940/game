@@ -37,6 +37,18 @@ function Vector2Mixin:IsLeftOf(other)
     return self:Cross(other) < 0
 end
 
+function Vector2Mixin:IsLeftOrOnOf(other)
+    return self:Cross(other) <= 0
+end
+
+function Vector2Mixin:IsRightOf(other)
+    return self:Cross(other) > 0
+end
+
+function Vector2Mixin:IsRightOrOnOf(other)
+    return self:Cross(other) >= 0
+end
+
 function Vector2Mixin:Normalize()
     local length = self:Length()
     self.x = self.x / length

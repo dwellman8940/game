@@ -6,6 +6,7 @@ Util/Debug.lua
 Util/Math.lua
 Util/TexturePool.lua
 Util/Rendering.lua
+Util/Polygon.lua
 Util/Texture.lua
 
 Networking/Messages.lua

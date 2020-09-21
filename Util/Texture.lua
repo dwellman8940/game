@@ -52,7 +52,7 @@ end
 local TRIANGLE_TEXTURE_SIZE = 2
 local TRIANGLE_TEXTURE_HALF_SIZE = TRIANGLE_TEXTURE_SIZE * .5
 function Texture.DrawConvexTriangleMesh(worldLocation, vertices, textures)
-    Debug.DrawWorldVerts(worldLocation, vertices)
+    --Debug.DrawConvexTriangleMesh(worldLocation, vertices)
 
     local textureIndex = 1
     local numTriangles = #vertices - 2
@@ -78,16 +78,6 @@ function Texture.DrawConvexTriangleMesh(worldLocation, vertices, textures)
             texture:SetVertexOffset(4, vertOffset4:GetX() - TRIANGLE_TEXTURE_HALF_SIZE, vertOffset4:GetY() + TRIANGLE_TEXTURE_HALF_SIZE)
         else
             texture:SetVertexOffset(4, -TRIANGLE_TEXTURE_HALF_SIZE, TRIANGLE_TEXTURE_HALF_SIZE)
-        end
-
-        if drawDebug then
-            Debug.DrawDebugLine(worldLocation + triVert1, worldLocation + triVert2, nil, 1, 1, 1, 1, 1, 1)
-            Debug.DrawDebugLine(worldLocation + triVert2, worldLocation + triVert3, nil, 1, 0, 1, 1, 0, 1)
-            Debug.DrawDebugLine(worldLocation + triVert3, worldLocation + (triVert4 or triVert1), nil, 1, 1, 0, 1, 1, 0)
-            if triVert4 then
-                Debug.DrawDebugLine(worldLocation + triVert1, worldLocation + triVert3, nil, 0, 1, 1, 0, 1, 1)
-                Debug.DrawDebugLine(worldLocation + triVert4, worldLocation + triVert1, nil, 0, 1, 1, 0, 1, 1)
-            end
         end
     end
 end

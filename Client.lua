@@ -213,12 +213,12 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         local testCollision = self:CreateEntity(GameEntityMixin, nil, CreateVector2(200, 0))
         local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
 
-        local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2(200, 200))
-        local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2)
+        --local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2(-200, 200))
+        --local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2)
 
         local occlusionComponent = CreateGameEntityComponent(OcclusionComponentMixin, self.localPlayer)
         occlusionComponent:AddGeometry(geometryComponent)
-        occlusionComponent:AddGeometry(geometryComponent2)
+        --occlusionComponent:AddGeometry(geometryComponent2)
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)

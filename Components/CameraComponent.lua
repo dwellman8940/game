@@ -8,7 +8,7 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
 
     self.maskTexture = TexturePool.AcquireWorldMaskTexture()
     self.maskTexture:SetAtlas("FogMaskSoftEdge")
-    self.maskTexture:SetScale(5)
+    self.maskTexture:SetScale(7)
     self.maskTexture:Show()
 
     self.fogTexture = TexturePool.AcquireRenderTexture()
@@ -17,7 +17,7 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     self.fogTexture:SetParent(worldFrame)
     self.fogTexture:SetDrawLayer(Texture.RenderDrawToWidgetLayer(40))
     self.fogTexture:AddMaskTexture(self.maskTexture)
-    --self.fogTexture:Show()
+    self.fogTexture:Show()
 
     self.worldFrame = worldFrame
 end
