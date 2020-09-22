@@ -20,7 +20,7 @@ function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, 
     line:SetThickness(2)
     line:SetColorTexture(1, 1, 1, 1)
     line:SetGradient("HORIZONTAL", firstR or 1, firstG or 0, firstB or 0, secondR or 0, secondG or 1, secondB or 0)
-    line:SetDrawLayer(Texture.RenderDrawToWidgetLayer(renderLayer or 41))
+    line:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))
 
     line:Show()
 
@@ -32,6 +32,7 @@ function Debug.DrawWorldVerts(worldLocation, verts, renderLayer)
         local nextVert = i ~= #vert and verts[i + 1] or verts[1]
 
         Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer)
+        Debug.DrawWorldString(worldLocation + vert, i, renderLayer)
     end
 end
 
@@ -48,4 +49,27 @@ function Debug.DrawConvexTriangleMesh(worldLocation, vertices)
         Debug.DrawDebugLine(worldLocation + triVert2, worldLocation + triVert3, nil, 1, 0, 1, 1, 0, 1)
         Debug.DrawDebugLine(worldLocation + triVert3, worldLocation + triVert1, nil, 1, 1, 0, 1, 1, 0)
     end
+end
+
+function Debug.DrawWorldPoint(worldLocation, pointSize, renderLayer, r, g, b, a)
+    local pointTexture = Pools.Texture.AcquireWorldTexture()
+    pointTexture:SetColorTexture(r or 1, g or 0, b or 1, a or 1)
+    pointTexture:SetWidth(pointSize or 5)
+    pointTexture:SetHeight(pointSize or 5)
+    pointTexture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))
+    Rendering.DrawAtWorldPoint(pointTexture, worldLocation)
+    pointTexture:Show()
+
+    C_Timer.NewTimer(0, function() Pools.Texture.ReleaseWorldTexture(pointTexture) end)
+end
+
+function Debug.DrawWorldString(worldLocation, message, renderLayer)
+    local fontString = Pools.FontString.AcquireWorldFontString()
+    fontString:SetFontObject("GameFontWhite")
+    fontString:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))
+    Rendering.DrawAtWorldPoint(fontString, worldLocation)
+    fontString:SetText(message)
+    fontString:Show()
+
+    C_Timer.NewTimer(0, function() Pools.FontString.ReleaseWorldFontString(fontString) end)
 end

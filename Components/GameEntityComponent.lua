@@ -45,6 +45,16 @@ function GameEntityComponentMixin:GetRelativeLocation()
     return self.relativeLocation
 end
 
+function GameEntityComponentMixin:GetClient()
+    -- only non-nil if this is running on a client
+    return self:GetGameEntityOwner():GetClient()
+end
+
+function GameEntityComponentMixin:GetServer()
+    -- only non-nil if this is running on a server
+    return self:GetGameEntityOwner():GetServer()
+end
+
 function GameEntityComponentMixin:GetWorldLocation()
     return self:GetGameEntityOwner():GetWorldLocation() + self.relativeLocation
 end

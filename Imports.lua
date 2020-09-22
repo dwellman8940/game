@@ -17,6 +17,8 @@ local function Import(name)
     envTable[name] = type(global) == "table" and DeepCopyTable(global) or global
 end
 
+setfenv(1, envTable)
+
 Import("table")
 Import("string")
 Import("math")
@@ -35,6 +37,7 @@ Import("CreateFrame")
 Import("GetTime")
 Import("UnitName")
 Import("IsInGroup")
+Import("GetCursorPosition")
 
 Import("C_ChatInfo")
 Import("C_Timer")

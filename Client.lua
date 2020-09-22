@@ -144,9 +144,35 @@ function ClientMixin:GetCursorLocation()
 
     local rootFrame = self:GetRootFrame()
     local scale = rootFrame:GetScale()
-    local clientX = Clamp(x / scale - rootFrame:GetLeft(), 0, rootFrame:GetWidth())
-    local clientY = Clamp(y / scale - rootFrame:GetBottom(), 0, rootFrame:GetWidth())
+    local offsetX, offsetY = rootFrame:GetCenter()
+    local halfWidth = rootFrame:GetWidth() * .5
+    local halfHeight = rootFrame:GetHeight() * .5
+    local clientX = Math.Clamp(x / scale - offsetX, -halfWidth, halfWidth)
+    local clientY = Math.Clamp(y / scale - offsetY, -halfHeight, halfHeight)
     return CreateVector2(clientX, clientY)
+end
+
+function ClientMixin:GetWorldCursorLocation()
+    return self:GetCursorLocation() - self:GetWorldFrameOffset()
+end
+
+function ClientMixin:GetWorldFrameOffset()
+    local _, _, _, worldOffsetX, worldOffsetY = WorldFrame:GetPoint(1)
+    return CreateVector2(worldOffsetX, worldOffsetY)
+end
+
+function ClientMixin:GetRenderFrameWorldBoundVertices()
+    local rootFrame = self:GetRootFrame()
+    local halfWidth = rootFrame:GetWidth() * .5
+    local halfHeight = rootFrame:GetHeight() * .5
+    local worldFrameOffset = self:GetWorldFrameOffset()
+
+    return {
+        CreateVector2(-halfWidth, -halfHeight) - worldFrameOffset,
+        CreateVector2(-halfWidth, halfHeight) - worldFrameOffset,
+        CreateVector2(halfWidth, halfHeight) - worldFrameOffset,
+        CreateVector2(halfWidth, -halfHeight) - worldFrameOffset,
+    }
 end
 
 function ClientMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
@@ -216,9 +242,8 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         --local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2(-200, 200))
         --local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2)
 
-        local occlusionComponent = CreateGameEntityComponent(OcclusionComponentMixin, self.localPlayer)
-        occlusionComponent:AddGeometry(geometryComponent)
-        --occlusionComponent:AddGeometry(geometryComponent2)
+        self.localPlayer:AddOcclusionGeometry(geometryComponent)
+        --self.localPlayer:AddOcclusionGeometry(geometryComponent2)
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)

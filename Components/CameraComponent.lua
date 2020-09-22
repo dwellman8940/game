@@ -15,7 +15,7 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     self.fogTexture:SetTexture("Interface/Addons/Game/Assets/Textures/fog")
     self.fogTexture:SetAllPoints(self.fogTexture:GetParent())
     self.fogTexture:SetParent(worldFrame)
-    self.fogTexture:SetDrawLayer(Texture.RenderDrawToWidgetLayer(40))
+    self.fogTexture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(40))
     self.fogTexture:AddMaskTexture(self.maskTexture)
     self.fogTexture:Show()
 

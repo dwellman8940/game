@@ -57,6 +57,12 @@ end
 function PlayerEntityMixin:MarkAsLocalPlayer(worldFrame)
     self.isLocalPlayer = true
     self.cameraComponent = CreateGameEntityComponent(CameraComponentMixin, self, worldFrame)
+    self.occlusionComponent = CreateGameEntityComponent(OcclusionComponentMixin, self, worldFrame)
+end
+
+-- TODO: Handle this separate from the player
+function PlayerEntityMixin:AddOcclusionGeometry(geometryComponent)
+    self.occlusionComponent:AddGeometry(geometryComponent)
 end
 
 function PlayerEntityMixin:IsLocalPlayer()

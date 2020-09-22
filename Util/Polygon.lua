@@ -4,7 +4,7 @@ setfenv(1, envTable)
 Polygon = {}
 
 local function WrapIndex(i, vertices)
-    return vertices[(i - 1) % #vertices + 1]
+    return vertices[Math.WrapIndex(i, #vertices)]
 end
 
 local function ArePointsRightOf(a, b, c)
@@ -110,7 +110,7 @@ function Polygon.ConcaveDecompose(vertices)
             local lowerDist = math.huge
             for j = 1, #vertices do
                 if ArePointsLeftOf(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices)) and ArePointsRightOrOnOf(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j - 1, vertices)) then
-                    local intersection = Math.CalculateLineIntersection(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j - 1, vertices))
+                    local intersection = Math.CalculateRayRayIntersection(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j - 1, vertices))
 
                     if intersection and ArePointsRightOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection) then
                         local distanceSquared = WrapIndex(i, vertices):DistanceSquared(intersection)
@@ -123,7 +123,7 @@ function Polygon.ConcaveDecompose(vertices)
                 end
 
                 if ArePointsLeftOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j + 1, vertices)) and ArePointsRightOrOnOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices)) then
-                    local intersection = Math.CalculateLineIntersection(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j + 1, vertices))
+                    local intersection = Math.CalculateRayRayIntersection(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j + 1, vertices))
                     if intersection and ArePointsLeftOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection) then
                         local distanceSquared = WrapIndex(i, vertices):DistanceSquared(intersection)
                         if distanceSquared < upperDist then
@@ -188,4 +188,42 @@ function Polygon.ConcaveDecompose(vertices)
     end
 
     return list
+end
+
+-- Sutherland-Hodgman
+function Polygon.ClipPolygon(polygonToClip, polygonToClipBy)
+    local outputList = polygonToClip
+    local clipVert1 = polygonToClipBy[#polygonToClipBy]
+    for i, clipVert2 in ipairs(polygonToClipBy) do
+        local inputList = outputList
+        outputList = {}
+        local startPoint = inputList[#inputList]
+        for j, endPoint in ipairs(inputList) do
+            if ArePointsLeftOrOnOf(endPoint, clipVert1, clipVert2) then
+                if ArePointsRightOf(startPoint, clipVert1, clipVert2) then
+                    local intersection = Math.CalculateRayRayIntersection(clipVert1, clipVert2, startPoint, endPoint)
+                    if intersection then
+                        table.insert(outputList, intersection)
+                    end
+                end
+                table.insert(outputList, endPoint)
+            elseif ArePointsLeftOrOnOf(startPoint, clipVert1, clipVert2) then
+                local intersection = Math.CalculateRayRayIntersection(clipVert1, clipVert2, startPoint, endPoint)
+                if intersection then
+                    table.insert(outputList, intersection)
+                end
+            end
+            startPoint = endPoint
+        end
+        clipVert1 = clipVert2
+    end
+    return outputList
+end
+
+function Polygon.TranslatePolygon(polygon, translation)
+    local translated = {}
+    for i, vertex in ipairs(polygon) do
+        translated[i] = vertex + translation
+    end
+    return translated
 end

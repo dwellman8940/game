@@ -3,6 +3,8 @@ setfenv(1, envTable)
 
 Math = {}
 
+Math.SmallNumber = .0001
+
 function Math.Lerp(startValue, endValue, amount)
 	return (1 - amount) * startValue + amount * endValue
 end
@@ -41,7 +43,7 @@ function Math.MapRangeClamped(fromStart, fromEnd, toStart, toEnd, amount)
     return Math.Lerp(toStart, toEnd, Math.Saturate(percent))
 end
 
-function Math.CalculateLineIntersection(start1, end1, start2, end2)
+function Math.CalculateRayRayIntersection(start1, end1, start2, end2)
     local s1Y = end1.y - start1.y
     local s2Y = end2.y - start2.y
 
@@ -50,7 +52,7 @@ function Math.CalculateLineIntersection(start1, end1, start2, end2)
 
     local determinant = s1Y * s2X - s2Y * s1X
 
-    if math.abs(determinant) > .001 then
+    if math.abs(determinant) > Math.SmallNumber then
         local c1 = s1Y * start1.x + s1X * start1.y
         local c2 = s2Y * start2.x + s2X * start2.y
 
@@ -60,6 +62,22 @@ function Math.CalculateLineIntersection(start1, end1, start2, end2)
         return CreateVector2(x, y)
     end
     return nil
+end
+
+function Math.CalculateRayLineIntersection(rayOrigin, rayDirection, segmentStart, segmentEnd)
+    local segDirection = segmentEnd - segmentStart
+
+    local determinant = rayDirection.x * segDirection.y - rayDirection.y * segDirection.x
+    if math.abs(determinant) > Math.SmallNumber then
+        local x = segmentStart.x - rayOrigin.x
+        local y = segmentStart.y - rayOrigin.y
+        local u = (x * rayDirection.y - y * rayDirection.x) / determinant
+        local t = (x * segDirection.y - y * segDirection.x) / determinant
+
+        if u >= 0 and u <= 1 and t >= 0 then
+            return rayOrigin + t * rayDirection
+        end
+    end
 end
 
 -- adapted from https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
@@ -104,4 +122,8 @@ do
 
         return false
     end
+end
+
+function Math.WrapIndex(index, numValues)
+    return (index - 1) % numValues + 1
 end

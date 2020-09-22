@@ -47,11 +47,6 @@ function GeometryComponentMixin:GetConvexVertexList()
 end
 
 function GeometryComponentMixin:Render(delta) -- override
-    for i, vertices in ipairs(self.convexVertexLists) do
-        --Debug.DrawWorldVerts(self:GetWorldLocation(), vertices)
-    end
-    -- Debug.DrawWorldVerts(self:GetWorldLocation(), self.vertices)
-
     if not self.textureList then
         self.textureList = {}
         for i, vertices in ipairs(self.convexVertexLists) do
@@ -61,7 +56,7 @@ function GeometryComponentMixin:Render(delta) -- override
             
             for i, texture in ipairs(textures) do
                 texture:SetColorTexture(1, 0, 0, .8)
-                texture:SetDrawLayer(Texture.RenderDrawToWidgetLayer(20))
+                texture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(20))
                 texture:Show()
             end
 
@@ -72,13 +67,11 @@ function GeometryComponentMixin:Render(delta) -- override
                 fontString:SetFontObject("GameFontNormal")
                 fontString:SetText(i)
                 Rendering.DrawAtWorldPoint(fontString, self:GetWorldLocation() + vertex)
-                fontString:Show()
+                --fontString:Show()
             end
 
             --return
         end
-
-
     end
 end
 

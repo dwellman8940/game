@@ -33,6 +33,10 @@ function Vector2Mixin:Cross(other)
     return self.x * other.y - self.y * other.x
 end
 
+function Vector2Mixin:ToPerpendicular()
+    return CreateVector2(self.y, -self.x)
+end
+
 function Vector2Mixin:IsLeftOf(other)
     return self:Cross(other) < 0
 end
@@ -47,12 +51,6 @@ end
 
 function Vector2Mixin:IsRightOrOnOf(other)
     return self:Cross(other) >= 0
-end
-
-function Vector2Mixin:Normalize()
-    local length = self:Length()
-    self.x = self.x / length
-    self.y = self.y / length
 end
 
 function Vector2Mixin:GetNormal()
@@ -112,3 +110,7 @@ end
 function Vector2Metatable:__tostring()
     return ("Vector2: %f %f"):format(self.x, self.y)
 end
+
+ZeroVector = CreateVector2(0, 0)
+RightVector = CreateVector2(1, 0)
+UpVector = CreateVector2(0, 1)
