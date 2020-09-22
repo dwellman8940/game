@@ -1,7 +1,9 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-TexturePool = {}
+Pools = {}
+Pools.Texture = {}
+Pools.FontString = {}
 
 local g_renderTexturePool
 local g_worldTexturePool
@@ -55,7 +57,7 @@ do
     end
 end
 
-function TexturePool.Initialize(worldFrame, renderFrame)
+function Pools.Initialize(worldFrame, renderFrame)
     local function TextureReset(pool, texture)
         texture:Hide()
         texture:ClearAllPoints()
@@ -68,8 +70,8 @@ function TexturePool.Initialize(worldFrame, renderFrame)
         TextureReset(pool, line)
     end
     function FontStringReset(framePool, fontString)
-        fontString:Hide();
-        fontString:ClearAllPoints();
+        fontString:Hide()
+        fontString:ClearAllPoints()
     end
     g_renderTexturePool = CreateTexturePool(renderFrame, "ARTWORK", -8, nil, TextureReset)
     g_worldTexturePool = CreateTexturePool(worldFrame, "ARTWORK", -8, nil, TextureReset)
@@ -78,56 +80,56 @@ function TexturePool.Initialize(worldFrame, renderFrame)
     g_worldLinePool = CreateLineTexturePool(worldFrame, "OVERLAY", 7, nil, LineReset)
 end
 
-function TexturePool.AcquireRenderTexture()
+function Pools.Texture.AcquireRenderTexture()
     return (g_renderTexturePool:Acquire())
 end
 
-function TexturePool.ReleaseRenderexture(texture)
+function Pools.Texture.ReleaseRenderexture(texture)
     g_renderTexturePool:Release(texture)
 end
 
-function TexturePool.AcquireWorldTexture()
+function Pools.Texture.AcquireWorldTexture()
     return (g_worldTexturePool:Acquire())
 end
 
-function TexturePool.AcquireWorldTextureArray(numTextures)
+function Pools.Texture.AcquireWorldTextureArray(numTextures)
     local textures = {}
     for i = 1, numTextures do
-        table.insert(textures, TexturePool.AcquireWorldTexture())
+        table.insert(textures, Pools.Texture.AcquireWorldTexture())
     end
     return textures
 end
 
-function TexturePool.ReleaseWorldTexture(texture)
+function Pools.Texture.ReleaseWorldTexture(texture)
     g_worldTexturePool:Release(texture)
 end
 
-function TexturePool.ReleaseWorldTextureArray(textureArray)
+function Pools.Texture.ReleaseWorldTextureArray(textureArray)
     for i, texture in ipairs(textureArray) do
-        TexturePool.ReleaseWorldTexture(texture)
+        Pools.Texture.ReleaseWorldTexture(texture)
     end
 end
 
-function TexturePool.AcquireWorldFontString()
-    return (g_worldFontStringPool:Acquire())
-end
-
-function TexturePool.ReleaseWorldFontString(fontString)
-    g_worldFontStringPool:Release(fontString)
-end
-
-function TexturePool.AcquireWorldMaskTexture()
+function Pools.Texture.AcquireWorldMaskTexture()
     return g_maskTexturePool:Acquire()
 end
 
-function TexturePool.ReleaseWorldMaskTexture(texture)
+function Pools.Texture.ReleaseWorldMaskTexture(texture)
     g_maskTexturePool:Release(texture)
 end
 
-function TexturePool.AcquireLineTexture()
+function Pools.Texture.AcquireLineTexture()
     return (g_worldLinePool:Acquire())
 end
 
-function TexturePool.ReleaseLineTexture(texture)
+function Pools.Texture.ReleaseLineTexture(texture)
     g_worldLinePool:Release(texture)
+end
+
+function Pools.FontString.AcquireWorldFontString()
+    return (g_worldFontStringPool:Acquire())
+end
+
+function Pools.FontString.ReleaseWorldFontString(fontString)
+    g_worldFontStringPool:Release(fontString)
 end

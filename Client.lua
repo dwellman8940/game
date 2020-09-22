@@ -22,7 +22,7 @@ Background:SetHorizTile(true)
 Background:SetVertTile(true)
 Background:SetAllPoints(WorldFrame)
 
-TexturePool.Initialize(WorldFrame, RenderFrame)
+Pools.Initialize(WorldFrame, RenderFrame)
 
 local ClientMixin = {}
 local ClientMessageHandlers = {}

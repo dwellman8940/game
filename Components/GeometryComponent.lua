@@ -26,7 +26,7 @@ end
 function GeometryComponentMixin:Destroy() -- override
     if self.textureList then
         for i, textures in ipairs(self.textureList) do
-            TexturePool.ReleaseWorldTextureArray(textures)
+            Pools.Texture.ReleaseWorldTextureArray(textures)
         end
         self.textureList = nil
     end
@@ -55,8 +55,8 @@ function GeometryComponentMixin:Render(delta) -- override
     if not self.textureList then
         self.textureList = {}
         for i, vertices in ipairs(self.convexVertexLists) do
-            local numTextures = Texture.GetNumTexturesRequiredForConvexTriangleMesh(#vertices)
-            local textures = TexturePool.AcquireWorldTextureArray(numTextures)
+            local numTextures = Rendering.GetNumTexturesRequiredForConvexTriangleMesh(#vertices)
+            local textures = Pools.Texture.AcquireWorldTextureArray(numTextures)
             table.insert(self.textureList, textures)
             
             for i, texture in ipairs(textures) do
@@ -65,13 +65,13 @@ function GeometryComponentMixin:Render(delta) -- override
                 texture:Show()
             end
 
-            Texture.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices, textures)
+            Rendering.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices, textures)
 
             for i, vertex in ipairs(vertices) do
-                local fontString = TexturePool.AcquireWorldFontString()
+                local fontString = Pools.FontString.AcquireWorldFontString()
                 fontString:SetFontObject("GameFontNormal")
                 fontString:SetText(i)
-                Texture.DrawAtWorldPoint(fontString, self:GetWorldLocation() + vertex)
+                Rendering.DrawAtWorldPoint(fontString, self:GetWorldLocation() + vertex)
                 fontString:Show()
             end
 

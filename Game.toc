@@ -4,10 +4,9 @@ Imports.lua
 
 Util/Debug.lua
 Util/Math.lua
-Util/TexturePool.lua
+Util/Pools.lua
 Util/Rendering.lua
 Util/Polygon.lua
-Util/Texture.lua
 
 Networking/Messages.lua
 Networking/Networking.lua

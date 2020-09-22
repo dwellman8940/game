@@ -6,12 +6,12 @@ CameraComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)
 
-    self.maskTexture = TexturePool.AcquireWorldMaskTexture()
+    self.maskTexture = Pools.Texture.AcquireWorldMaskTexture()
     self.maskTexture:SetAtlas("FogMaskSoftEdge")
     self.maskTexture:SetScale(7)
     self.maskTexture:Show()
 
-    self.fogTexture = TexturePool.AcquireRenderTexture()
+    self.fogTexture = Pools.Texture.AcquireRenderTexture()
     self.fogTexture:SetTexture("Interface/Addons/Game/Assets/Textures/fog")
     self.fogTexture:SetAllPoints(self.fogTexture:GetParent())
     self.fogTexture:SetParent(worldFrame)
@@ -23,10 +23,10 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
 end
 
 function CameraComponentMixin:Destroy() -- override
-    TexturePool.ReleaseWorldMaskTexture(self.maskTexture)
+    Pools.Texture.ReleaseWorldMaskTexture(self.maskTexture)
     self.maskTexture = nil
 
-    TexturePool.ReleaseWorldTexture(self.fogTexture)
+    Pools.Texture.ReleaseWorldTexture(self.fogTexture)
     self.fogTexture = nil
 
     GameEntityComponentMixin.Destroy(self)
@@ -37,7 +37,7 @@ function CameraComponentMixin:SetWorldOffset(offsetX, offsetY)
 end
 
 function CameraComponentMixin:Render(delta) -- override
-    Texture.DrawAtWorldPoint(self.maskTexture, self:GetWorldLocation())
+    Rendering.DrawAtWorldPoint(self.maskTexture, self:GetWorldLocation())
 
     self.targetWorldOffset = Math.LerpOverTime(self.targetWorldOffset or self:GetWorldLocation(), self:GetWorldLocation(), .08, delta)
     self:SetWorldOffset(self.targetWorldOffset:GetXY())

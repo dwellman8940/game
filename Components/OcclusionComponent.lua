@@ -21,7 +21,7 @@ end
 function OcclusionComponentMixin:ReleaseAllTextures()
     if self.textureList then
         for i, textures in ipairs(self.textureList) do
-            TexturePool.ReleaseWorldTextureArray(textures)
+            Pools.Texture.ReleaseWorldTextureArray(textures)
         end
         self.textureList = nil
     end
@@ -105,8 +105,8 @@ function OcclusionComponentMixin:DrawShadowPolygon(worldLocation, shadowPolygon)
 
     --for i, vertices in ipairs({shadowPolygon}) do
     for i, vertices in ipairs(Polygon.ConcaveDecompose(Reverse(shadowPolygon))) do
-        local numTextures = Texture.GetNumTexturesRequiredForConvexTriangleMesh(#vertices)
-        local textures = TexturePool.AcquireWorldTextureArray(numTextures)
+        local numTextures = Rendering.GetNumTexturesRequiredForConvexTriangleMesh(#vertices)
+        local textures = Pools.Texture.AcquireWorldTextureArray(numTextures)
         table.insert(self.textureList, textures)
         
         for i, texture in ipairs(textures) do
@@ -115,6 +115,6 @@ function OcclusionComponentMixin:DrawShadowPolygon(worldLocation, shadowPolygon)
             texture:Show()
         end
 
-        Texture.DrawConvexTriangleMesh(worldLocation, vertices, textures)
+        Rendering.DrawConvexTriangleMesh(worldLocation, vertices, textures)
     end
 end

@@ -13,9 +13,9 @@ function Debug.Print(...)
 end
 
 function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
-    local line = TexturePool.AcquireLineTexture()
+    local line = Pools.Texture.AcquireLineTexture()
 
-    Texture.DrawLineAtWorldPoints(line, startWorldLocation, endWorldLocation)
+    Rendering.DrawLineAtWorldPoints(line, startWorldLocation, endWorldLocation)
 
     line:SetThickness(2)
     line:SetColorTexture(1, 1, 1, 1)
@@ -24,7 +24,7 @@ function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, 
 
     line:Show()
 
-    C_Timer.NewTimer(0, function() TexturePool.ReleaseLineTexture(line) end)
+    C_Timer.NewTimer(0, function() Pools.Texture.ReleaseLineTexture(line) end)
 end
 
 function Debug.DrawWorldVerts(worldLocation, verts, renderLayer)

@@ -6,19 +6,19 @@ TextureComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 function TextureComponentMixin:Initialize(owningEntity) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)
 
-    self.texture = TexturePool.AcquireWorldTexture()
+    self.texture = Pools.Texture.AcquireWorldTexture()
     self.texture:Show()
 end
 
 function TextureComponentMixin:Destroy() -- override
-    TexturePool.ReleaseWorldTexture(self.texture)
+    Pools.Texture.ReleaseWorldTexture(self.texture)
     self.texture = nil
 
     GameEntityComponentMixin.Destroy(self)
 end
 
 function TextureComponentMixin:Render(delta) -- override
-     Texture.DrawAtWorldPoint(self.texture, self:GetWorldLocation())
+     Rendering.DrawAtWorldPoint(self.texture, self:GetWorldLocation())
 end
 
 function TextureComponentMixin:SetSize(width, height)
@@ -30,7 +30,7 @@ function TextureComponentMixin:SetColorTexture(r, g, b, a)
 end
 
 function TextureComponentMixin:SetRenderLayer(renderLayer)
-    local drawLayer, subLevel = Texture.RenderDrawToWidgetLayer(renderLayer)
+    local drawLayer, subLevel = Rendering.RenderDrawToWidgetLayer(renderLayer)
     self.texture:SetDrawLayer(drawLayer, subLevel)
 end
 
