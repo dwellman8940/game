@@ -26,8 +26,8 @@ function GameMixin:Run()
          -- todo: real lobby
         local playersInLobby = {
             "Ladreiline",
-            "Cereekeloran",
-            "Dorbland"
+            --"Cereekeloran",
+            --"Dorbland"
         }
 
         self.server:BeginGame(playersInLobby)

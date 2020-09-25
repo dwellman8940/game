@@ -72,6 +72,10 @@ function Vector2Mixin:DistanceSquared(other)
     return deltaX * deltaX + deltaY * deltaY
 end
 
+function Vector2Mixin:Distance(other)
+    return math.sqrt(self:DistanceSquared(other))
+end
+
 function Vector2Mixin:Dot(other)
     return self.x * other.x + self.y * other.y
 end

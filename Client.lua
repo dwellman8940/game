@@ -7,7 +7,7 @@ ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
 
 local RenderFrame = CreateFrame("Frame", nil, ClientFrame)
-RenderFrame:SetClipsChildren(true)
+--RenderFrame:SetClipsChildren(true)
 RenderFrame:SetAllPoints(ClientFrame)
 
 local WorldFrame = CreateFrame("Frame", nil, RenderFrame)
@@ -18,9 +18,11 @@ WorldFrame:SetHeight(1024)
 --TODO: Should not be here
 local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", -8)
 Background:SetTexture("Interface/Addons/Game/Assets/Textures/grid", "REPEAT", "REPEAT")
+Background:SetColorTexture(.3, .3, .3, .2)
 Background:SetHorizTile(true)
 Background:SetVertTile(true)
 Background:SetAllPoints(WorldFrame)
+Background:Show()
 
 Pools.Initialize(WorldFrame, RenderFrame)
 

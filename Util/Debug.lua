@@ -27,17 +27,34 @@ function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, 
     C_Timer.NewTimer(0, function() Pools.Texture.ReleaseLineTexture(line) end)
 end
 
-function Debug.DrawWorldVerts(worldLocation, verts, renderLayer)
+function Debug.DrawWorldVerts(worldLocation, verts, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
     for i, vert in ipairs(verts) do
         local nextVert = i ~= #vert and verts[i + 1] or verts[1]
 
-        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer)
-        Debug.DrawWorldString(worldLocation + vert, i, renderLayer)
+        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+    end
+end
+
+function Debug.DrawWorldVertsWithIndices(worldLocation, verts, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+    for i, vert in ipairs(verts) do
+        local prevVert = i ~= 1 and verts[i - 1] or verts[#verts]
+        local nextVert = i ~= #vert and verts[i + 1] or verts[1]
+
+        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+
+        if prevVert == vert or nextVert == vert then
+            Debug.DrawWorldString(worldLocation + vert, i, renderLayer)
+        else
+            local a = (prevVert - vert):GetNormal()
+            local b = (nextVert - vert):GetNormal()
+            local dir = (a + b):GetNormal() * (i % 2 == 0 and -1 or 1)
+            Debug.DrawWorldString(worldLocation + vert + dir * 10, i, renderLayer)
+        end
     end
 end
 
 function Debug.DrawConvexTriangleMesh(worldLocation, vertices)
-    Debug.DrawWorldVerts(worldLocation, vertices)
+    --Debug.DrawWorldVerts(worldLocation, vertices)
 
     local numTriangles = #vertices - 2
     for triangleIndex = 1, numTriangles do
@@ -65,7 +82,7 @@ end
 
 function Debug.DrawWorldString(worldLocation, message, renderLayer)
     local fontString = Pools.FontString.AcquireWorldFontString()
-    fontString:SetFontObject("GameFontWhite")
+    fontString:SetFontObject("GameFontWhiteSmall")
     fontString:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))
     Rendering.DrawAtWorldPoint(fontString, worldLocation)
     fontString:SetText(message)

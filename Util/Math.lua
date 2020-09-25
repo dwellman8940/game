@@ -69,15 +69,34 @@ function Math.CalculateRayLineIntersection(rayOrigin, rayDirection, segmentStart
 
     local determinant = rayDirection.x * segDirection.y - rayDirection.y * segDirection.x
     if math.abs(determinant) > Math.SmallNumber then
-        local x = segmentStart.x - rayOrigin.x
-        local y = segmentStart.y - rayOrigin.y
-        local u = (x * rayDirection.y - y * rayDirection.x) / determinant
-        local t = (x * segDirection.y - y * segDirection.x) / determinant
+        local dx = segmentStart.x - rayOrigin.x
+        local dy = segmentStart.y - rayOrigin.y
+        local u = (dx * rayDirection.y - dy * rayDirection.x) / determinant
+        local t = (dx * segDirection.y - dy * segDirection.x) / determinant
 
         if u >= 0 and u <= 1 and t >= 0 then
             return rayOrigin + t * rayDirection
         end
     end
+end
+
+function Math.LineIntersectRaw(start1, end1, start2, end2)
+    local segment1X = end1.x - start1.x
+    local segment1Y = end1.y - start1.y
+    
+    local segment2X = end2.x - start2.x
+    local segment2Y = end2.y - start2.y
+
+    local determinant = segment1X * segment2Y - segment1Y * segment2X
+    if math.abs(determinant) > Math.SmallNumber then
+        local dx = start2.x - start1.x
+        local dy = start2.y - start1.y
+        local u = (dx * segment1Y - dy * segment1X) / determinant
+        local t = (dx * segment2Y - dy * segment2X) / determinant
+
+        return true, u, t, CreateVector2(start1.x + t * segment1X, start1.y + t * segment1Y)
+    end
+    return false
 end
 
 -- adapted from https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
