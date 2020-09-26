@@ -16,7 +16,7 @@ function Rendering.RenderDrawToWidgetLayer(renderLayer)
 end
 
 function Rendering.DrawAtWorldPoint(region, worldLocation, originPoint)
-    PixelUtil.SetPoint(region, originPoint or "CENTER", region:GetParent(), "CENTER", (worldLocation / region:GetScale()):GetXY())
+    region:SetPoint(originPoint or "CENTER", region:GetParent(), "CENTER", (worldLocation / region:GetScale()):GetXY())
 end
 
 function Rendering.DrawLineAtWorldPoints(line, startPoint, endPoint)

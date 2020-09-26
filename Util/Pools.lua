@@ -61,7 +61,8 @@ function Pools.Initialize(worldFrame, renderFrame)
     local function TextureReset(pool, texture)
         texture:Hide()
         texture:ClearAllPoints()
-        texture:SetSnapToPixelGrid(true)
+        texture:SetSnapToPixelGrid(false)
+        texture:SetTexelSnappingBias(0)
         for vertexIndex = 1, 4 do
             texture:SetVertexOffset(vertexIndex, 0, 0)
         end

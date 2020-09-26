@@ -1,7 +1,3 @@
-local function CaptureDebug(key, t)
-    Game_Debug[key] = t
-end
-
 local addonName, envTable = ...
 setfenv(1, envTable)
 
@@ -89,19 +85,7 @@ local function ConcatTables(listDest, listSource)
 end
 
 -- Bayazit's algorithm - https://mpen.ca/406/bayazit
-local reetryCount = 0
 function Polygon.ConcaveDecompose(vertices)
-    Polygon.Simplify(vertices)
-    CaptureDebug("ConcaveDecompose", vertices)
-
-    if reetryCount == 0 then
-        Debug.Print("----------------")
-    end
-    Debug.Print("ConcaveDecompose", #vertices, reetryCount)
-    if reetryCount > 1 then
-        --return {}
-    end
-    reetryCount = reetryCount + 1
     local list = {}
     local lowerIntersection = CreateVector2(0, 0)
     local upperIntersection = CreateVector2(0, 0)
@@ -113,22 +97,15 @@ function Polygon.ConcaveDecompose(vertices)
     local upperPoly
 
     for i = 1, #vertices do
-        Debug.Print("VertexIndex", i)
         if IsReflex(i, vertices) then
-            Debug.Print("IsReflex", i)
             local upperDist = math.huge
             local lowerDist = math.huge
             for j = 1, #vertices do
                 if ArePointsLeftOf(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices)) and ArePointsRightOrOnOf(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j - 1, vertices)) then
-                    local intersection = Math.CalculateRayRayIntersection(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j - 1, vertices)) or ZeroVector
-                    Debug.Print("Lower Intersection", j, intersection)
-                    --Debug.DrawWorldPoint(intersection, nil, nil, 1, 0, 0, 1)
-                    assert(intersection)
-                    Debug.Print("Test Intersection is RightOf", WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection, Cross(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection))
-                    if ArePointsRightOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection) then
+                    local intersection = Math.CalculateRayRayIntersection(WrapIndex(i - 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j - 1, vertices))
+                    if intersection and ArePointsRightOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection) then
                         local distanceSquared = WrapIndex(i, vertices):DistanceSquared(intersection)
                         if distanceSquared < lowerDist then
-                            Debug.Print("Lower Distance", distanceSquared)
                             lowerDist = distanceSquared
                             lowerIntersection = intersection
                             lowerIndex = j
@@ -137,14 +114,10 @@ function Polygon.ConcaveDecompose(vertices)
                 end
 
                 if ArePointsLeftOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j + 1, vertices)) and ArePointsRightOrOnOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices)) then
-                    local intersection = Math.CalculateRayRayIntersection(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j + 1, vertices)) or ZeroVector
-                    Debug.Print("Upper Intersection", j, intersection)
-                    --Debug.DrawWorldPoint(intersection, nil, nil, 0, 0, 1, 1)
-                    assert(intersection)
-                    if ArePointsLeftOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection) then
+                    local intersection = Math.CalculateRayRayIntersection(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), WrapIndex(j, vertices), WrapIndex(j + 1, vertices))
+                    if intersection and ArePointsLeftOf(WrapIndex(i + 1, vertices), WrapIndex(i, vertices), intersection) then
                         local distanceSquared = WrapIndex(i, vertices):DistanceSquared(intersection)
                         if distanceSquared < upperDist then
-                            Debug.Print("Upper Distance", distanceSquared)
                             upperDist = distanceSquared
                             upperIntersection = intersection
                             upperIndex = j
@@ -153,26 +126,13 @@ function Polygon.ConcaveDecompose(vertices)
                 end
             end
 
-            Debug.Print("Checking Indices", lowerIndex, upperIndex)
             if lowerIndex == upperIndex % #vertices + 1 then
                 local intersection = (lowerIntersection + upperIntersection) * .5
-                Debug.DrawDebugLine(lowerIntersection, upperIntersection)
-                Debug.DrawWorldPoint(intersection, nil, nil, 1, 1, 1)
-                Debug.Print("Passed check", lowerIndex, upperIndex, intersection)
 
                 lowerPoly = Slice(i, upperIndex, vertices)
                 table.insert(lowerPoly, intersection)
                 upperPoly = Slice(lowerIndex, i, vertices)
                 table.insert(upperPoly, intersection)
-
-                Debug.Print("Slicing Lower", i, upperIndex, #lowerPoly)
-                for i, v in ipairs(lowerPoly) do
-                    Debug.Print("     ", i, v)
-                end
-                Debug.Print("Slicing Upper", lowerIndex, i, #upperPoly)
-                for i, v in ipairs(upperPoly) do
-                    Debug.Print("     ", i, v)
-                end
             else
                 local highestScore = 0
                 local bestIndex = lowerIndex
@@ -180,12 +140,9 @@ function Polygon.ConcaveDecompose(vertices)
                 while upperIndex < lowerIndex do
                     upperIndex = upperIndex + #vertices
                 end
-                Debug.Print("Scoring", lowerIndex, upperIndex)
 
                 for j = lowerIndex, upperIndex do
-                    Debug.Print("Scoring J", j)
                     if IsReachable(i, j, vertices) then
-                        Debug.Print("Is Reachable", i, j)
                         local score = 1 / (WrapIndex(i, vertices):DistanceSquared(WrapIndex(j, vertices)) + 1)
                         if IsReflex(j, vertices) then
                             if (ArePointsRightOrOnOf(WrapIndex(j - 1, vertices), WrapIndex(j, vertices), WrapIndex(i, vertices)) and ArePointsLeftOrOnOf(WrapIndex(j + 1, vertices), WrapIndex(j, vertices), WrapIndex(i, vertices))) then
@@ -202,20 +159,12 @@ function Polygon.ConcaveDecompose(vertices)
                         end
                     end
                 end
-                Debug.Print("Slicing", i, bestIndex)
                 lowerPoly = Slice(i, bestIndex, vertices)
-                for i, v in ipairs(lowerPoly) do
-                    Debug.Print("     ", i, v)
-                end
                 upperPoly = Slice(bestIndex, i, vertices)
-                for i, v in ipairs(upperPoly) do
-                    Debug.Print("     ", i, v)
-                end
             end
 
             ConcatTables(list, Polygon.ConcaveDecompose(lowerPoly))
             ConcatTables(list, Polygon.ConcaveDecompose(upperPoly))
-            reetryCount = reetryCount - 1
             return list
         end
     end
@@ -229,7 +178,6 @@ function Polygon.ConcaveDecompose(vertices)
         table.insert(list, Polygon.Simplify(vertices))
     end
 
-    reetryCount = reetryCount - 1
     return list
 end
 
@@ -238,19 +186,13 @@ local MIN_DISTANCE_SQ = 1.5 ^ 2
 function Polygon.TryAddingVertex(vertices, vertex, distSq)
     if #vertices == 0 or not Polygon.AreVerticesTooClose(vertex, vertices[#vertices], distSq) then
         table.insert(vertices, vertex)
+        return true
     end
+    return false
 end
 
 function Polygon.AreVerticesTooClose(vertexA, vertexB, distSq)
-    do return end
     return vertexA:DistanceSquared(vertexB) < (distSq or MIN_DISTANCE_SQ)
-end
-
-local function TryInsertClippedVertex(inputList, outputList, vertex)
-    local previousVertex = outputList[#outputList] or inputList[#inputList]
-    if not previousVertex or vertex:DistanceSquared(previousVertex) > MIN_DISTANCE_SQ then
-        table.insert(outputList, vertex)
-    end
 end
 
 -- Sutherland-Hodgman
@@ -266,14 +208,14 @@ function Polygon.ClipPolygon(polygonToClip, polygonToClipBy)
                 if ArePointsRightOf(startPoint, clipVert1, clipVert2) then
                     local intersection = Math.CalculateRayRayIntersection(clipVert1, clipVert2, startPoint, endPoint)
                     if intersection then
-                        TryInsertClippedVertex(inputList, outputList, intersection)
+                        table.insert(outputList, intersection)
                     end
                 end
-                TryInsertClippedVertex(inputList, outputList, endPoint)
+                table.insert(outputList, endPoint)
             elseif ArePointsLeftOrOnOf(startPoint, clipVert1, clipVert2) then
                 local intersection = Math.CalculateRayRayIntersection(clipVert1, clipVert2, startPoint, endPoint)
                 if intersection then
-                    TryInsertClippedVertex(inputList, outputList, intersection)
+                    table.insert(outputList, intersection)
                 end
             end
             startPoint = endPoint
@@ -411,9 +353,6 @@ local function IsPointInsideLinkedPoly(point, rootVertex)
            end
         end
 
-        if ((currentVertex.y < y and nextVertex.y >= y or nextVertex.y < y and currentVertex.y >= y) and (currentVertex.x <= x or nextVertex.x <= x)) then
-            --isOdd = isOdd ~= (currentVertex.x + (y - currentVertex.y) /(nextVertex.y - currentVertex.y) * (nextVertex.x - currentVertex.x) < x)
-        end
         currentVertex = nextVertex
         nextVertex = currentVertex.next
     until AreClipVertexEqual(currentVertex, rootVertex)
@@ -440,13 +379,13 @@ local function MarkProcessed(clip)
     end
 end
 
-local colors
-= {
-    {1, 1, 0},
-    {1, 0, 1},
-    {1, 1, 1},
-    {0, 1, 1},
-}
+local function ReverseRange(i, j, t)
+    while i < j do
+        t[i], t[j] = t[j], t[i]
+        j = j - 1
+        i = i + 1
+    end
+end
 
 -- Greiner-Hormann
 -- See https://www.inf.usi.ch/hormann/papers/Greiner.1998.ECO.pdf
@@ -455,18 +394,14 @@ local colors
 -- https://github.com/w8r/GreinerHormann
 -- Simplified for just unions
 function Polygon.UnionPolygons(polygonA, polygonB)
-    --Polygon.Simplify(polygonA)
-    --Polygon.Simplify(polygonB)
-    Debug.Print("-----------------")
-    CaptureDebug("UnionPolygonsA", polygonA)
-    CaptureDebug("UnionPolygonsB", polygonB)
+    Polygon.Simplify(polygonA)
+    Polygon.Simplify(polygonB)
+
     if not polygonA or #polygonA < 3 or not polygonB or #polygonB < 3 then
         return nil
     end
     local sourceRoot = CreateClipDataFromPolygon(polygonA)
     local clipRoot = CreateClipDataFromPolygon(polygonB)
-
-    local intersectionCount = 0
 
     -- Phase 1: Find intersections
     do
@@ -478,14 +413,11 @@ function Polygon.UnionPolygons(polygonA, polygonB)
                     if not clipVertex.hasIntersection then
                         local nextSourceVertex = FindNextNonIntersection(sourceVertex.next)
                         local nextClipVertex = FindNextNonIntersection(clipVertex.next)
-                        local hasIntersection, u, t, intersection = Math.LineIntersectRaw(sourceVertex, nextSourceVertex, clipVertex, nextClipVertex)
-                        Debug.Print(hasIntersection)
-                        if hasIntersection and t >= 0 and t < 1 and u >= 0 and u < 1 then
-                            intersectionCount = intersectionCount + 1
-                            Debug.Print(intersectionCount)
-                            Debug.DrawWorldPoint(intersection, nil, 50, unpack(colors[intersectionCount] or {1, 0, 0}))
-                            local sourceIntersection = CreateClipDataFromIntersection(intersection.x, intersection.y, t)
-                            local clipIntersection = CreateClipDataFromIntersection(intersection.x, intersection.y, u)
+                        local hasIntersection, u, t, intersectionX, intersectionY = Math.LineIntersectRaw(sourceVertex, nextSourceVertex, clipVertex, nextClipVertex)
+                        if hasIntersection and t > 0 and t < 1 and u > 0 and u < 1 then
+
+                            local sourceIntersection = CreateClipDataFromIntersection(intersectionX, intersectionY, t)
+                            local clipIntersection = CreateClipDataFromIntersection(intersectionX, intersectionY, u)
 
                             sourceIntersection.other = clipIntersection
                             clipIntersection.other = sourceIntersection
@@ -534,7 +466,6 @@ function Polygon.UnionPolygons(polygonA, polygonB)
     -- Phase 3: Create the clipped polygon
     do
         local current = FindNextIntersection(sourceRoot)
-        Debug.Print("sourceInClip", sourceInClip, "clipInSource", clipInSource, "hasAnyIntersections", current ~= nil)
         if not current then
             -- No intersections, just select the right one
             if sourceInClip then
@@ -565,17 +496,9 @@ function Polygon.UnionPolygons(polygonA, polygonB)
             current = FindNextIntersection(current.next)
         until not current
 
-        local function r(t)
-            local n = {}
-            for i=#t, 1, -1 do
-                table.insert(n, t[i])
-            end
-            return n
-        end
-        Polygon.Simplify(result)
         if not sourceInClip then
-            return r(result)
+            ReverseRange(1, #result, result)
         end
-        return result
+        return Polygon.Simplify(result)
     end
 end

@@ -8,17 +8,18 @@ function GeometryComponentMixin:Initialize(owningEntity) -- override
 
     self.vertices = {}
 
-    local SIZE = 50
-    table.insert(self.vertices, CreateVector2(-SIZE, -SIZE))
-    table.insert(self.vertices, CreateVector2(-SIZE * 2, 0))
-    table.insert(self.vertices, CreateVector2(-SIZE, SIZE))
-    table.insert(self.vertices, CreateVector2(-SIZE, SIZE * 5))
-    table.insert(self.vertices, CreateVector2(SIZE * 2, SIZE * 5))
-    table.insert(self.vertices, CreateVector2(0, SIZE * 1.5))
-    table.insert(self.vertices, CreateVector2(SIZE, SIZE))
-    table.insert(self.vertices, CreateVector2(SIZE, -SIZE))
+    local WIDTH = 50
+    local HEIGHT = 10
+    table.insert(self.vertices, CreateVector2(-WIDTH, -HEIGHT))
+    --table.insert(self.vertices, CreateVector2(-SIZE * 2, 0))
+    table.insert(self.vertices, CreateVector2(-WIDTH, HEIGHT))
+    --table.insert(self.vertices, CreateVector2(-SIZE, SIZE * 5))
+    --table.insert(self.vertices, CreateVector2(SIZE * 2, SIZE * 5))
+    --table.insert(self.vertices, CreateVector2(0, SIZE * 1.5))
+    table.insert(self.vertices, CreateVector2(WIDTH, HEIGHT))
+    table.insert(self.vertices, CreateVector2(WIDTH, -HEIGHT))
 
-    table.insert(self.vertices, CreateVector2(SIZE * 2, -SIZE * 2))
+    --table.insert(self.vertices, CreateVector2(SIZE * 2, -SIZE * 2))
 
     self.convexVertexLists = Polygon.ConcaveDecompose(self.vertices)
 end
@@ -55,7 +56,7 @@ function GeometryComponentMixin:Render(delta) -- override
             table.insert(self.textureList, textures)
             
             for i, texture in ipairs(textures) do
-                texture:SetColorTexture(1, 0, 0, .8)
+                texture:SetColorTexture(1, 1, 0, .8)
                 texture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(20))
                 texture:Show()
             end

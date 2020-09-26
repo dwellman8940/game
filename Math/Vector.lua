@@ -3,11 +3,10 @@ setfenv(1, envTable)
 
 local Vector2Mixin = {}
 
-local Vector2Metatable = {}
+local Vector2Metatable = { __index = Vector2Mixin }
 
 function CreateVector2(x, y)
-    local vector2 = CreateFromMixins(Vector2Mixin)
-    setmetatable(vector2, Vector2Metatable)
+    local vector2 = setmetatable({}, Vector2Metatable)
     vector2:SetXY(x, y)
     return vector2
 end

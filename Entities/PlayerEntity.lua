@@ -12,7 +12,6 @@ function PlayerEntityMixin:CreateRenderData()
         return
     end
 
-    do return end
     self.textureComponent = CreateGameEntityComponent(TextureComponentMixin, self)
     self.textureComponent:SetSize(40, 70)
     self.textureComponent:SetRenderLayer(self:IsLocalPlayer() and 32 or 31)

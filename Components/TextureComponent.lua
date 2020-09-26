@@ -22,7 +22,8 @@ function TextureComponentMixin:Render(delta) -- override
 end
 
 function TextureComponentMixin:SetSize(width, height)
-    PixelUtil.SetSize(self.texture, width, height)
+    self.texture:SetWidth(width)
+    self.texture:SetHeight(height)
 end
 
 function TextureComponentMixin:SetColorTexture(r, g, b, a)

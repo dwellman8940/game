@@ -18,7 +18,6 @@ WorldFrame:SetHeight(1024)
 --TODO: Should not be here
 local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", -8)
 Background:SetTexture("Interface/Addons/Game/Assets/Textures/grid", "REPEAT", "REPEAT")
-Background:SetColorTexture(.3, .3, .3, .2)
 Background:SetHorizTile(true)
 Background:SetVertTile(true)
 Background:SetAllPoints(WorldFrame)
@@ -165,8 +164,8 @@ end
 
 function ClientMixin:GetRenderFrameWorldBoundVertices()
     local rootFrame = self:GetRootFrame()
-    local halfWidth = rootFrame:GetWidth() * .5
-    local halfHeight = rootFrame:GetHeight() * .5
+    local halfWidth = (rootFrame:GetWidth() + 2) * .5
+    local halfHeight = (rootFrame:GetHeight() + 2) * .5
     local worldFrameOffset = self:GetWorldFrameOffset()
 
     return {
@@ -238,14 +237,15 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         self.localPlayer:MarkAsLocalPlayer(WorldFrame)
         self:BindKeyboardToPlayer(self.localPlayer)
 
-        local testCollision = self:CreateEntity(GameEntityMixin, nil, CreateVector2(200, 0))
-        local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
+        --local testCollision = self:CreateEntity(GameEntityMixin, nil, CreateVector2(-200, 0))
+        --local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
+        --self.localPlayer:AddOcclusionGeometry(geometryComponent)
 
-        --local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2(-200, 200))
-        --local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2)
-
-        self.localPlayer:AddOcclusionGeometry(geometryComponent)
-        --self.localPlayer:AddOcclusionGeometry(geometryComponent2)
+        for i = 1, 2 do
+            local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 150, 0))
+            local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2)
+            self.localPlayer:AddOcclusionGeometry(geometryComponent2)
+        end
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)

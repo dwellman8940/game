@@ -44,46 +44,19 @@ function Math.MapRangeClamped(fromStart, fromEnd, toStart, toEnd, amount)
 end
 
 function Math.CalculateRayRayIntersection(start1, end1, start2, end2)
-    local s1Y = end1.y - start1.y
-    local s2Y = end2.y - start2.y
-
-    local s1X = start1.x - end1.x
-    local s2X = start2.x - end2.x
-
-    local determinant = s1Y * s2X - s2Y * s1X
-
-    if math.abs(determinant) > Math.SmallNumber then
-        local c1 = s1Y * start1.x + s1X * start1.y
-        local c2 = s2Y * start2.x + s2X * start2.y
-
-        local x = (s2X * c1 - s1X * c2) / determinant
-        local y = (s1Y * c2 - s2Y * c1) / determinant
-
-        return CreateVector2(x, y)
-    end
-    return nil
+    local hasIntersection, u, t, intersectionX, intersectionY = Math.LineIntersectRaw(start1, end1, start2, end2)
+    return hasIntersection and CreateVector2(intersectionX, intersectionY) or nil
 end
 
 function Math.CalculateRayLineIntersection(rayOrigin, rayDirection, segmentStart, segmentEnd)
-    local segDirection = segmentEnd - segmentStart
-
-    local determinant = rayDirection.x * segDirection.y - rayDirection.y * segDirection.x
-    if math.abs(determinant) > Math.SmallNumber then
-        local dx = segmentStart.x - rayOrigin.x
-        local dy = segmentStart.y - rayOrigin.y
-        local u = (dx * rayDirection.y - dy * rayDirection.x) / determinant
-        local t = (dx * segDirection.y - dy * segDirection.x) / determinant
-
-        if u >= 0 and u <= 1 and t >= 0 then
-            return rayOrigin + t * rayDirection
-        end
-    end
+    local hasIntersection, u, t, intersectionX, intersectionY = Math.LineIntersectRaw(rayOrigin, rayOrigin + rayDirection, segmentStart, segmentEnd)
+    return hasIntersection and u >= 0 and u <= 1 and t >= 0 and CreateVector2(intersectionX, intersectionY) or nil
 end
 
 function Math.LineIntersectRaw(start1, end1, start2, end2)
     local segment1X = end1.x - start1.x
     local segment1Y = end1.y - start1.y
-    
+  
     local segment2X = end2.x - start2.x
     local segment2Y = end2.y - start2.y
 
@@ -94,53 +67,15 @@ function Math.LineIntersectRaw(start1, end1, start2, end2)
         local u = (dx * segment1Y - dy * segment1X) / determinant
         local t = (dx * segment2Y - dy * segment2X) / determinant
 
-        return true, u, t, CreateVector2(start1.x + t * segment1X, start1.y + t * segment1Y)
+        return true, u, t, start1.x + t * segment1X, start1.y + t * segment1Y, segment1X, segment1Y
     end
     return false
 end
 
--- adapted from https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-do
-    local function OnSegment(startPoint, endPoint, point)
-        return endPoint.x <= math.max(startPoint.x, point.x)
-           and endPoint.x >= math.min(startPoint.x, point.x)
-           and endPoint.y <= math.max(startPoint.y, point.y)
-           and endPoint.y >= math.min(startPoint.y, point.y)
-    end
 
-    local function LineSegmentOrientation(startPoint, endPoint, point)
-        local val = (endPoint.y - startPoint.y) * (point.x - endPoint.x) - (endPoint.x - startPoint.x) * (point.y - endPoint.y)
-        return val == 0 and 0 or val > 0 and 1 or 2
-    end
-
-    function Math.DoLineSegmentsIntersect(start1, end1, start2, end2)
-        local o1 = LineSegmentOrientation(start1, end1, start2)
-        local o2 = LineSegmentOrientation(start1, end1, end2)
-        local o3 = LineSegmentOrientation(start2, end2, start1)
-        local o4 = LineSegmentOrientation(start2, end2, end1)
-
-        if o1 ~= o2 and o3 ~= o4 then
-            return true
-        end
-
-        if o1 == 0 and OnSegment(start1, start2, end1) then
-            return true
-        end
-
-        if o2 == 0 and OnSegment(start1, end2, end1) then
-            return true
-        end
-
-        if o3 == 0 and OnSegment(start2, start1, end2) then
-            return true
-        end
-
-        if o4 == 0 and OnSegment(start2, end1, end2) then
-            return true
-        end
-
-        return false
-    end
+function Math.DoLineSegmentsIntersect(start1, end1, start2, end2)
+    local hasIntersection, u, t = Math.LineIntersectRaw(start1, end1, start2, end2)
+    return hasIntersection and u >= 0 and u <= 1 and t >= 0 and t <= 1
 end
 
 function Math.WrapIndex(index, numValues)

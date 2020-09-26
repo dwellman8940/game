@@ -32,19 +32,20 @@ function CameraComponentMixin:Destroy() -- override
     GameEntityComponentMixin.Destroy(self)
 end
 
-function CameraComponentMixin:SetWorldOffset(offsetX, offsetY)
-    self.worldFrame:SetPoint("CENTER", -offsetX, -offsetY)
+function CameraComponentMixin:SetWorldOffset(offset)
+    Rendering.DrawAtWorldPoint(self.worldFrame, -offset, "CENTER")
 end
 
 function CameraComponentMixin:Render(delta) -- override
     Rendering.DrawAtWorldPoint(self.maskTexture, self:GetWorldLocation())
 
     self.targetWorldOffset = Math.LerpOverTime(self.targetWorldOffset or self:GetWorldLocation(), self:GetWorldLocation(), .08, delta)
-    self:SetWorldOffset(self.targetWorldOffset:GetXY())
+    self:SetWorldOffset(self.targetWorldOffset)
 end
 
 function CameraComponentMixin:SetSize(width, height)
-    PixelUtil.SetSize(self.maskTexture, width, height)
+    self.maskTexture:SetWidth(width)
+    self.maskTexture:SetHeight(height)
 end
 
 function CameraComponentMixin:SetColorTexture(r, g, b, a)
