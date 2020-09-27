@@ -43,7 +43,7 @@ Import("C_ChatInfo")
 Import("C_Timer")
 
 Import("CreateFromMixins")
-Import("PixelUtil")
 Import("ObjectPoolMixin")
+Import("CreateFramePool")
 Import("CreateTexturePool")
 Import("CreateFontStringPool")

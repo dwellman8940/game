@@ -7,7 +7,7 @@ ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
 
 local RenderFrame = CreateFrame("Frame", nil, ClientFrame)
---RenderFrame:SetClipsChildren(true)
+RenderFrame:SetClipsChildren(true)
 RenderFrame:SetAllPoints(ClientFrame)
 
 local WorldFrame = CreateFrame("Frame", nil, RenderFrame)
@@ -54,6 +54,7 @@ function ClientMixin:ResetGame()
 
 
     self.entityGraph = CreateEntityGraph()
+    self.physicsSystem = CreatePhysicsSystem()
 
     self.remotePlayers = {}
 
@@ -99,10 +100,12 @@ function ClientMixin:TryTick()
 
         while self.elapsed >= SECONDS_PER_TICK do
             self.elapsed = self.elapsed - SECONDS_PER_TICK
+            self.physicsSystem:Tick(SECONDS_PER_TICK)
             self:Tick(SECONDS_PER_TICK)
         end
     end
 
+    self.physicsSystem:Render(delta)
     self:Render(delta)
 
     self.lastTickTime = now
@@ -226,6 +229,11 @@ function ClientMixin:BindKeyboardToPlayer()
     ClientFrame:SetScript("OnKeyUp", OnKeyUp)
 end
 
+function ClientMixin:GetPhysicsSystem()
+    return self.physicsSystem
+end
+
+-- Message Handlers --
 function ClientMessageHandlers:ResetGame()
     self:ResetGame()
 end

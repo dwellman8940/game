@@ -69,7 +69,7 @@ function PlayerEntityMixin:IsLocalPlayer()
     return self.isLocalPlayer
 end
 
-function PlayerEntityMixin:ProcessPendingMovement(delta)
+function PlayerEntityMixin:ProcessPendingMovement()
     local x = 0
     if self.isMovingRight then
         x = x + 1
@@ -86,15 +86,19 @@ function PlayerEntityMixin:ProcessPendingMovement(delta)
         y = y - 1
     end
 
-    local playerSpeed = 10000 * delta
-    self.velocity = CreateVector2(x * playerSpeed, y * playerSpeed)
+    if self.velocity then
+        self.velocity:SetXY(x, y)
+    else
+        self.velocity = CreateVector2(x, y)
+    end
 end
 
+local PlayerSpeed = 200
 function PlayerEntityMixin:TickClient(delta)
     if self:IsLocalPlayer() then
-        self:ProcessPendingMovement(delta)
+        self:ProcessPendingMovement()
 
-        self:SetWorldLocation(self:GetWorldLocation() + self.velocity * delta)
+        self:SetWorldLocation(self:GetWorldLocation() + self.velocity:GetSafeNormal() * PlayerSpeed * delta)
         
         local worldLocation = self:GetWorldLocation()
         if not self.lastSentVelocity or self.lastSentVelocity ~= self.velocity then
@@ -106,7 +110,7 @@ function PlayerEntityMixin:TickClient(delta)
             local remoteDelta = GetTime() - self.remoteTimestamp
             local lerpAmount = Math.MapRangeClamped(0, 1, .08, .2, remoteDelta)
 
-            self.remoteLocation = self.remoteLocation + self.remoteVelocity * delta
+            self.remoteLocation = self.remoteLocation + self.remoteVelocity:GetSafeNormal() * PlayerSpeed * delta
             local desiredLocation = Math.LerpOverTime(self:GetWorldLocation(), self.remoteLocation, lerpAmount, delta)
             self:SetWorldLocation(desiredLocation)
         end

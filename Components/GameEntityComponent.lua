@@ -55,6 +55,17 @@ function GameEntityComponentMixin:GetServer()
     return self:GetGameEntityOwner():GetServer()
 end
 
+function GameEntityComponentMixin:GetPhysicsSystem()
+    local client = self:GetClient()
+    if client then
+        return client:GetPhysicsSystem()
+    end
+    local server = self:GetServer()
+    if server then
+        return server:GetPhysicsSystem()
+    end
+end
+
 function GameEntityComponentMixin:GetWorldLocation()
     return self:GetGameEntityOwner():GetWorldLocation() + self.relativeLocation
 end

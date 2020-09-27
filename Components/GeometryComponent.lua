@@ -1,6 +1,9 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local DebugView_RawVertices = DebugViews.RegisterView("GeometryComponent", "Raw Vertices")
+local DebugView_ConvexVertices = DebugViews.RegisterView("GeometryComponent", "Convex Vertices")
+
 GeometryComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 
 function GeometryComponentMixin:Initialize(owningEntity) -- override
@@ -9,19 +12,21 @@ function GeometryComponentMixin:Initialize(owningEntity) -- override
     self.vertices = {}
 
     local WIDTH = 50
-    local HEIGHT = 10
+    local HEIGHT = 50
     table.insert(self.vertices, CreateVector2(-WIDTH, -HEIGHT))
-    --table.insert(self.vertices, CreateVector2(-SIZE * 2, 0))
+    --table.insert(self.vertices, CreateVector2(-WIDTH * 2, 0))
     table.insert(self.vertices, CreateVector2(-WIDTH, HEIGHT))
-    --table.insert(self.vertices, CreateVector2(-SIZE, SIZE * 5))
-    --table.insert(self.vertices, CreateVector2(SIZE * 2, SIZE * 5))
-    --table.insert(self.vertices, CreateVector2(0, SIZE * 1.5))
+    --table.insert(self.vertices, CreateVector2(-WIDTH, HEIGHT * 5))
+    --table.insert(self.vertices, CreateVector2(WIDTH * 2, HEIGHT * 5))
+    --table.insert(self.vertices, CreateVector2(0, WIDTH * 1.5))
     table.insert(self.vertices, CreateVector2(WIDTH, HEIGHT))
     table.insert(self.vertices, CreateVector2(WIDTH, -HEIGHT))
 
-    --table.insert(self.vertices, CreateVector2(SIZE * 2, -SIZE * 2))
+    --table.insert(self.vertices, CreateVector2(WIDTH * 2, -HEIGHT * 2))
 
     self.convexVertexLists = Polygon.ConcaveDecompose(self.vertices)
+
+    self:GetPhysicsSystem():RegisterStaticGeometryList(self:GetWorldLocation(), self.convexVertexLists)
 end
 
 function GeometryComponentMixin:Destroy() -- override
@@ -48,6 +53,15 @@ function GeometryComponentMixin:GetConvexVertexList()
 end
 
 function GeometryComponentMixin:Render(delta) -- override
+    if DebugView_RawVertices:IsViewEnabled() then
+        Debug.DrawWorldVertsWithIndices(self:GetWorldLocation(), self:GetVertices())
+    end
+    if DebugView_ConvexVertices:IsViewEnabled() then
+        for i, vertices in ipairs(self:GetConvexVertexList()) do
+            Debug.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices)
+        end
+    end
+    
     if not self.textureList then
         self.textureList = {}
         for i, vertices in ipairs(self.convexVertexLists) do
@@ -70,8 +84,6 @@ function GeometryComponentMixin:Render(delta) -- override
                 Rendering.DrawAtWorldPoint(fontString, self:GetWorldLocation() + vertex)
                 --fontString:Show()
             end
-
-            --return
         end
     end
 end

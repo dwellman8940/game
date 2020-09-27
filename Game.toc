@@ -3,11 +3,15 @@
 
 Imports.lua
 
+Util/DebugViews.lua
 Util/Debug.lua
 Util/Math.lua
 Util/Pools.lua
 Util/Rendering.lua
 Util/Polygon.lua
+
+Physics/PhysicsShape.lua
+Physics/Physics.lua
 
 Networking/Messages.lua
 Networking/Networking.lua
@@ -26,7 +30,6 @@ Components/CameraComponent.lua
 
 Entities/PlayerEntity.lua
 
-Physics.lua
 Server.lua
 Client.lua
 Game.lua

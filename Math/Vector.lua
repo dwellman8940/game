@@ -57,6 +57,17 @@ function Vector2Mixin:GetNormal()
     return CreateVector2(self.x / length, self.y / length)
 end
 
+function Vector2Mixin:GetSafeNormal(tolerance)
+    local lengthSq = self:LengthSquared()
+
+    if lengthSq <= (tolerance or Math.SmallNumber) then
+        return CreateVector2(0, 0)
+    end
+
+    local length = math.sqrt(lengthSq)
+    return CreateVector2(self.x / length, self.y / length)
+end
+
 function Vector2Mixin:LengthSquared()
     return self.x * self.x + self.y * self.y
 end
