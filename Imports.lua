@@ -1,3 +1,5 @@
+Game_DebugViews = {}
+
 local addonName, envTable = ...
 
 local function DeepCopyTable(t)
@@ -15,6 +17,10 @@ end
 local function Import(name)
     local global = _G[name]
     envTable[name] = type(global) == "table" and DeepCopyTable(global) or global
+end
+
+local function Allow(name)
+    return _G[name]
 end
 
 setfenv(1, envTable)
@@ -38,6 +44,7 @@ Import("GetTime")
 Import("UnitName")
 Import("IsInGroup")
 Import("GetCursorPosition")
+Import("Ambiguate")
 
 Import("C_ChatInfo")
 Import("C_Timer")
@@ -47,3 +54,17 @@ Import("ObjectPoolMixin")
 Import("CreateFramePool")
 Import("CreateTexturePool")
 Import("CreateFontStringPool")
+
+local EventFrame = CreateFrame("Frame")
+EventFrame:RegisterEvent("ADDON_LOADED")
+EventFrame:SetScript("OnEvent", function(self, event, ...)
+    if event == "ADDON_LOADED" then
+        local loadedAddon = ...
+        if loadedAddon == addonName then
+            local Game_DebugViews = Allow("Game_DebugViews")
+
+            DebugViews.OnSettingsLoaded(Game_DebugViews)
+            self:UnregisterEvent("ADDON_LOADED")
+        end
+    end
+end)

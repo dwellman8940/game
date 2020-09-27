@@ -1,32 +1,27 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local DebugView_DynamicGeometry = DebugViews.RegisterView("Physics", "Dynamic Geometry")
 local DebugView_RawVertices = DebugViews.RegisterView("GeometryComponent", "Raw Vertices")
 local DebugView_ConvexVertices = DebugViews.RegisterView("GeometryComponent", "Convex Vertices")
+local DebugView_ConvexIndices = DebugViews.RegisterView("GeometryComponent", "Convex Indices")
 
 GeometryComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 
-function GeometryComponentMixin:Initialize(owningEntity) -- override
+function GeometryComponentMixin:Initialize(owningEntity, vertices, isDynamicShape) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)
 
-    self.vertices = {}
-
-    local WIDTH = 50
-    local HEIGHT = 50
-    table.insert(self.vertices, CreateVector2(-WIDTH, -HEIGHT))
-    --table.insert(self.vertices, CreateVector2(-WIDTH * 2, 0))
-    table.insert(self.vertices, CreateVector2(-WIDTH, HEIGHT))
-    --table.insert(self.vertices, CreateVector2(-WIDTH, HEIGHT * 5))
-    --table.insert(self.vertices, CreateVector2(WIDTH * 2, HEIGHT * 5))
-    --table.insert(self.vertices, CreateVector2(0, WIDTH * 1.5))
-    table.insert(self.vertices, CreateVector2(WIDTH, HEIGHT))
-    table.insert(self.vertices, CreateVector2(WIDTH, -HEIGHT))
-
-    --table.insert(self.vertices, CreateVector2(WIDTH * 2, -HEIGHT * 2))
+    self.vertices = vertices
 
     self.convexVertexLists = Polygon.ConcaveDecompose(self.vertices)
+    self.isDynamicShape = isDynamicShape
 
-    self:GetPhysicsSystem():RegisterStaticGeometryList(self:GetWorldLocation(), self.convexVertexLists)
+    if self.isDynamicShape then
+        assert(#self.convexVertexLists == 1)
+        self.dynamicPhysicsShape = self:GetPhysicsSystem():RegisterDynamicGeometry(self:GetWorldLocation(), self.convexVertexLists[1])
+    else
+        self:GetPhysicsSystem():RegisterStaticGeometryList(self:GetWorldLocation(), self.convexVertexLists)
+    end
 end
 
 function GeometryComponentMixin:Destroy() -- override
@@ -52,6 +47,21 @@ function GeometryComponentMixin:GetConvexVertexList()
     return self.convexVertexLists
 end
 
+function GeometryComponentMixin:GetDynamicPhysicsShape()
+    return self.dynamicPhysicsShape
+end
+
+function GeometryComponentMixin:CollideWithStatic(worldLocation)
+    assert(self.isDynamicShape and self.dynamicPhysicsShape)
+    return self:GetPhysicsSystem():CollideShapeWithStatic(worldLocation, self.dynamicPhysicsShape)
+end
+
+function GeometryComponentMixin:TickClient(delta) -- override
+    if self.isDynamicShape then
+        self.dynamicPhysicsShape:SetWorldLocation(self:GetWorldLocation())
+    end
+end
+
 function GeometryComponentMixin:Render(delta) -- override
     if DebugView_RawVertices:IsViewEnabled() then
         Debug.DrawWorldVertsWithIndices(self:GetWorldLocation(), self:GetVertices())
@@ -61,29 +71,42 @@ function GeometryComponentMixin:Render(delta) -- override
             Debug.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices)
         end
     end
-    
-    if not self.textureList then
+    if DebugView_ConvexIndices:IsViewEnabled() then
+        for i, vertices in ipairs(self:GetConvexVertexList()) do
+            for j, vertex in ipairs(vertices) do
+                Debug.DrawWorldString(self:GetWorldLocation() + vertex, j)
+            end
+        end
+    end
+
+    if self.isDynamicShape then
+        -- TODO: better rendering controls, remove rendering entirely from geo component
+        if DebugView_DynamicGeometry:IsViewEnabled() then
+            self.dynamicPhysicsShape:RenderDebug(delta)
+        end
+        return
+    end
+
+    if self.textureList then
+        if self.isDynamicShape then
+            for i, vertices in ipairs(self:GetConvexVertexList()) do
+                Rendering.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices, self.textureList[i])
+            end
+        end
+    else
         self.textureList = {}
-        for i, vertices in ipairs(self.convexVertexLists) do
+        for i, vertices in ipairs(self:GetConvexVertexList()) do
             local numTextures = Rendering.GetNumTexturesRequiredForConvexTriangleMesh(#vertices)
             local textures = Pools.Texture.AcquireWorldTextureArray(numTextures)
             table.insert(self.textureList, textures)
             
-            for i, texture in ipairs(textures) do
+            for j, texture in ipairs(textures) do
                 texture:SetColorTexture(1, 1, 0, .8)
                 texture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(20))
                 texture:Show()
             end
 
             Rendering.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices, textures)
-
-            for i, vertex in ipairs(vertices) do
-                local fontString = Pools.FontString.AcquireWorldFontString()
-                fontString:SetFontObject("GameFontNormal")
-                fontString:SetText(i)
-                Rendering.DrawAtWorldPoint(fontString, self:GetWorldLocation() + vertex)
-                --fontString:Show()
-            end
         end
     end
 end

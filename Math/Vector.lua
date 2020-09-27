@@ -90,6 +90,10 @@ function Vector2Mixin:Dot(other)
     return self.x * other.x + self.y * other.y
 end
 
+function Vector2Mixin:Clone()
+    return CreateVector2(self:GetXY())
+end
+
 function Vector2Metatable:__add(other)
     return CreateVector2(self.x + other.x, self.y + other.y)
 end

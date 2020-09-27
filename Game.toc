@@ -1,5 +1,5 @@
 ## Interface: 80300
-## SavedVariables: Game_Debug
+## SavedVariables: Game_Debug, Game_DebugViews
 
 Imports.lua
 

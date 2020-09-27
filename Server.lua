@@ -15,6 +15,7 @@ end
 function ServerMixin:Initialize()
     self.messageQueue = {}
     self.entityGraph = CreateEntityGraph()
+    self.physicsSystem = CreatePhysicsSystem()
 
     self.elapsed = 0
     self.lastTickTime = GetTime()
@@ -32,6 +33,10 @@ function ServerMixin:BeginGame(playersInLobbby)
         self.players[i] = player
         self:SendMessageToAllClients("InitPlayer", playerName, i)
     end
+end
+
+function ServerMixin:GetPhysicsSystem()
+    return self.physicsSystem
 end
 
 function ServerMixin:SendMessageToAllClients(messageName, ...)
@@ -63,6 +68,7 @@ function ServerMixin:TryTick()
 
     while self.elapsed >= SECONDS_PER_TICK do
         self.elapsed = self.elapsed - SECONDS_PER_TICK
+        self.physicsSystem:Tick(SECONDS_PER_TICK)
         self:Tick(SECONDS_PER_TICK)
     end
 end

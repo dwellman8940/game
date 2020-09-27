@@ -3,6 +3,25 @@ setfenv(1, envTable)
 
 PlayerEntityMixin = CreateFromMixins(GameEntityMixin)
 
+local PLAYER_WIDTH = 40
+local PLAYER_HEIGHT = 70
+
+function PlayerEntityMixin:Initialize(parentEntity, relativeLocation)
+    GameEntityMixin.Initialize(self, parentEntity, relativeLocation)
+
+    local PLAYER_WIDTH_HALF = PLAYER_WIDTH * .5
+    local PLAYER_HEIGHT_HALF = PLAYER_HEIGHT * .5
+    local vertices = {
+        CreateVector2(-PLAYER_WIDTH_HALF, -PLAYER_HEIGHT_HALF),
+        CreateVector2(-PLAYER_WIDTH_HALF, PLAYER_HEIGHT_HALF),
+        CreateVector2(PLAYER_WIDTH_HALF, PLAYER_HEIGHT_HALF),
+        CreateVector2(PLAYER_WIDTH_HALF, -PLAYER_HEIGHT_HALF),
+    }
+
+    local dynamicPhysics = true
+    self.geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, self, vertices, dynamicPhysics)
+end
+
 function PlayerEntityMixin:Render(delta) -- override
     self:CreateRenderData()
 end
@@ -13,14 +32,14 @@ function PlayerEntityMixin:CreateRenderData()
     end
 
     self.textureComponent = CreateGameEntityComponent(TextureComponentMixin, self)
-    self.textureComponent:SetSize(40, 70)
+    self.textureComponent:SetSize(PLAYER_WIDTH, PLAYER_HEIGHT)
     self.textureComponent:SetRenderLayer(self:IsLocalPlayer() and 32 or 31)
 
     local colorTable = {
-        {1, 0, 0, 1},
-        {0, 1, 0, 1},
-        {0, 0, 1, 1},
-        {1, 1, 1, 1},
+        {1, 0, 0, .5},
+        {0, 1, 0, .5},
+        {0, 0, 1, .5},
+        {1, 1, 1, .5},
     }
 
     self.textureComponent:SetColorTexture(unpack(colorTable[self:GetPlayerID()]))
@@ -98,19 +117,29 @@ function PlayerEntityMixin:TickClient(delta)
     if self:IsLocalPlayer() then
         self:ProcessPendingMovement()
 
-        self:SetWorldLocation(self:GetWorldLocation() + self.velocity:GetSafeNormal() * PlayerSpeed * delta)
+        local targetLocation = self:GetWorldLocation() + self.velocity:GetSafeNormal() * PlayerSpeed * delta
+        local adjustedLocation = self.geometryComponent:CollideWithStatic(targetLocation)
+
+        self:SetWorldLocation(adjustedLocation)
         
         local worldLocation = self:GetWorldLocation()
         if not self.lastSentVelocity or self.lastSentVelocity ~= self.velocity then
-            self.lastSentVelocity = self.velocity
+            if self.lastSentVelocity then
+                self.lastSentVelocity:SetXY(self.velocity:GetXY())
+            else
+                self.lastSentVelocity = self.velocity:Clone()
+            end
+            
             self:GetClient():SendMessageToPeers("OnMovement", self:GetPlayerID(), worldLocation, self.velocity)
         end
     else
         if self.remoteVelocity then
             local remoteDelta = GetTime() - self.remoteTimestamp
-            local lerpAmount = Math.MapRangeClamped(0, 1, .08, .2, remoteDelta)
+            local lerpAmount = Math.MapRangeClamped(0, 5, .08, .2, remoteDelta)
 
-            self.remoteLocation = self.remoteLocation + self.remoteVelocity:GetSafeNormal() * PlayerSpeed * delta
+            local targetLocation = self.remoteLocation + self.remoteVelocity:GetSafeNormal() * PlayerSpeed * delta
+            local adjustedLocation = self.geometryComponent:CollideWithStatic(targetLocation)
+            self.remoteLocation = adjustedLocation
             local desiredLocation = Math.LerpOverTime(self:GetWorldLocation(), self.remoteLocation, lerpAmount, delta)
             self:SetWorldLocation(desiredLocation)
         end
@@ -119,7 +148,7 @@ end
 
 function PlayerEntityMixin:TickServer(delta)
     if self.remoteVelocity then
-        self.remoteLocation = self.remoteLocation + self.remoteVelocity * delta
+        self.remoteLocation = self.remoteLocation + self.remoteVelocity * PlayerSpeed * delta
         self:SetWorldLocation(self.remoteLocation)
     end
 end

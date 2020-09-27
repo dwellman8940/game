@@ -50,8 +50,6 @@ end
 local TRIANGLE_TEXTURE_SIZE = 2
 local TRIANGLE_TEXTURE_HALF_SIZE = TRIANGLE_TEXTURE_SIZE * .5
 function Rendering.DrawConvexTriangleMesh(worldLocation, vertices, textures)
-    --Debug.DrawConvexTriangleMesh(worldLocation, vertices)
-
     local textureIndex = 1
     local numTriangles = #vertices - 2
     for triangleIndex = 1, numTriangles, 2 do

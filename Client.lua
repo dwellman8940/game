@@ -6,9 +6,13 @@ ClientFrame:SetWidth(800)
 ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
 
+local DebugView_ClientClips = DebugViews.RegisterView("Client", "Clip", true)
+
 local RenderFrame = CreateFrame("Frame", nil, ClientFrame)
 RenderFrame:SetClipsChildren(true)
 RenderFrame:SetAllPoints(ClientFrame)
+
+DebugView_ClientClips:SetOnStateChangedCallback(function(debugView, state) RenderFrame:SetClipsChildren(state) end)
 
 local WorldFrame = CreateFrame("Frame", nil, RenderFrame)
 WorldFrame:SetPoint("CENTER")
@@ -245,13 +249,27 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         self.localPlayer:MarkAsLocalPlayer(WorldFrame)
         self:BindKeyboardToPlayer(self.localPlayer)
 
+        local vertices = {}
+        local WIDTH = 50
+        local HEIGHT = 50
+        table.insert(vertices, CreateVector2(-WIDTH, -HEIGHT))
+        table.insert(vertices, CreateVector2(-WIDTH * 2, 0))
+        table.insert(vertices, CreateVector2(-WIDTH, HEIGHT))
+        table.insert(vertices, CreateVector2(-WIDTH, HEIGHT * 5))
+        table.insert(vertices, CreateVector2(WIDTH * 2, HEIGHT * 5))
+        table.insert(vertices, CreateVector2(0, WIDTH * 1.5))
+        table.insert(vertices, CreateVector2(WIDTH, HEIGHT))
+        table.insert(vertices, CreateVector2(WIDTH, -HEIGHT))
+
+        --table.insert(vertices, CreateVector2(WIDTH * 2, -HEIGHT * 2))
+
         --local testCollision = self:CreateEntity(GameEntityMixin, nil, CreateVector2(-200, 0))
         --local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
         --self.localPlayer:AddOcclusionGeometry(geometryComponent)
 
-        for i = 1, 2 do
-            local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 150, 0))
-            local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2)
+        for i = 1, 10 do
+            local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 190, 0))
+            local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2, vertices)
             self.localPlayer:AddOcclusionGeometry(geometryComponent2)
         end
     else

@@ -1,6 +1,9 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local DebugView_ShadowRays = DebugViews.RegisterView("Occlusion", "Shadow Rays")
+local DebugView_ShadowMesh = DebugViews.RegisterView("Occlusion", "Shadow Mesh")
+
 OcclusionComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 
 function OcclusionComponentMixin:Initialize(owningEntity) -- override
@@ -95,8 +98,6 @@ function OcclusionComponentMixin:Render(delta) -- override
             for vertIndex, vertex in ipairs(clippedVertices) do
                 local towards = vertexOrigin + vertex
 
-                --Debug.DrawDebugLine(rayOrigin, geometryComponentLocation + vertex, 30, 1, 1, 1, 1, 1, 1)
-
                 if not leftVertIndex then
                     leftVertIndex = vertIndex
                     rightVertIndex = vertIndex
@@ -119,24 +120,28 @@ function OcclusionComponentMixin:Render(delta) -- override
             if leftVertIndex then
                 self:DrawShadowPolygon(CreateConnectingVertices(rightVertIndex, leftVertIndex, clippedVertices, geometryComponentLocation, rayOrigin, worldBoundVertices))
 
-                --Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[leftVertIndex] - rayOrigin):GetNormal() * 1000, nil, .8, .8, 1, .8, .8, 1)
-                --Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[rightVertIndex] - rayOrigin):GetNormal() * 1000, nil, 0, 0, 0, 0, 0, 0)
+                if DebugView_ShadowRays:IsViewEnabled() then
+                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[leftVertIndex] - rayOrigin):GetNormal() * 1000, nil, .8, .8, 1, .8, .8, 1)
+                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[rightVertIndex] - rayOrigin):GetNormal() * 1000, nil, 0, 0, 0, 0, 0, 0)
+                end
             end
         end
     end
 end
 
 function OcclusionComponentMixin:DrawShadowPolygon(shadowPolygon)
-    --Debug.DrawWorldVerts(ZeroVector, shadowPolygon)
     if not self.textureList then
         self.textureList = {}
     end
 
-    --Debug.DrawConvexTriangleMesh(ZeroVector, vertices)
+    if DebugView_ShadowMesh:IsViewEnabled() then
+        Debug.DrawConvexTriangleMesh(ZeroVector, shadowPolygon)
+    end
+
     local numTextures = Rendering.GetNumTexturesRequiredForConvexTriangleMesh(#shadowPolygon)
     local textures = Pools.Texture.AcquireWorldTextureArray(numTextures)
     table.insert(self.textureList, textures)
-    
+  
     for i, texture in ipairs(textures) do
         texture:SetTexture("Interface/Addons/Game/Assets/Textures/fog")
         texture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(22))

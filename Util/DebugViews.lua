@@ -9,15 +9,26 @@ local RebuildDebugUI
 
 local debugViews = {}
 local categoriesToViews = {}
+local savedSettings = {}
 
 local ViewProto = {}
 local ViewMetatable = { __index = ViewProto }
 
 function ViewProto:SetViewEnabled(enabledState)
     local newEnabledState = not not enabledState
+    local isInitialState = self.enabledState == nil
     if newEnabledState ~= self.enabledState then
         self.enabledState = newEnabledState
+        if savedSettings then
+            if not savedSettings[self:GetCategoryName()] then
+                savedSettings[self:GetCategoryName()] = {}
+            end
+            savedSettings[self:GetCategoryName()][self:GetViewName()] = self:IsViewEnabled()
+        end
         RebuildDebugUI()
+        if self.OnStateChangedCallback then
+            self.OnStateChangedCallback(self, self.enabledState)
+        end
     end
 end
 
@@ -29,8 +40,16 @@ function ViewProto:GetViewEnabled()
     return self.enabledState
 end
 
+function ViewProto:GetCategoryName()
+    return self.categoryName
+end
+
 function ViewProto:GetViewName()
     return self.viewName
+end
+
+function ViewProto:SetOnStateChangedCallback(callback)
+    self.OnStateChangedCallback = callback
 end
 
 function DebugViews.RegisterView(categoryName, viewName, enabledState)
@@ -42,7 +61,7 @@ function DebugViews.RegisterView(categoryName, viewName, enabledState)
         categoriesToViews[categoryName] = category
     end
 
-    local debugView = setmetatable({viewName = viewName}, ViewMetatable)
+    local debugView = setmetatable( {categoryName = categoryName, viewName = viewName }, ViewMetatable)
     table.insert(category, debugView)
     debugViews[viewName] = debugView
     debugView:SetViewEnabled(enabledState)
@@ -59,6 +78,30 @@ end
 function DebugViews.IsDebugViewEnabled(viewName)
     local debugView = debugViews[viewName]
     return debugView and debugView:IsViewEnabled()
+end
+
+function DebugViews.FindDebugView(categoryName, viewName)
+    local category = categoriesToViews[categoryName]
+    if category then
+        for i, debugView in ipairs(category) do
+            if debugView:GetViewName() == viewName then
+                return debugView
+            end
+        end
+    end
+    return nil
+end
+
+function DebugViews.OnSettingsLoaded(settings)
+    savedSettings = settings
+    for categoryName, debugViews in pairs(savedSettings) do
+        for debugViewName, debugViewState in pairs(debugViews) do
+            local debugView = DebugViews.FindDebugView(categoryName, debugViewName)
+            if debugView then
+                debugView:SetViewEnabled(debugViewState)
+            end
+        end
+    end
 end
 
 local DebugViewPane = CreateFrame("Frame", nil, UIParent)
