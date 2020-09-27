@@ -41,3 +41,5 @@ luac.out
 
 
 .vscode/
+out/linecounter.json
+out/linecounter.txt
