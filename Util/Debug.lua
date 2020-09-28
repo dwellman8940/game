@@ -19,10 +19,10 @@ function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, 
 
     line:SetThickness(2)
     line:SetColorTexture(1, 1, 1, 1)
-    local firstR, firstG, firstB = (startColor or Colors.Red):GetRGB()
-    local secondR, secondG, secondB = (endColor or Colors.Green):GetRGB()
+    local firstR, firstG, firstB, firstA = (startColor or Colors.Red):GetRGBA()
+    local secondR, secondG, secondB, secondA = (endColor or Colors.Green):GetRGBA()
 
-    line:SetGradient("HORIZONTAL", firstR, firstG, firstB, secondR, secondG, secondB)
+    line:SetGradientAlpha("HORIZONTAL", firstR, firstG, firstB, firstA, secondR, secondG, secondB, secondA)
     line:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))
 
     line:Show()
@@ -60,6 +60,7 @@ end
 function Debug.DrawDebugAABB(worldLocation, aabb, renderLayer, minColor, maxColor, otherColor)
     local minPoint = worldLocation + aabb:GetMinPoint()
     local maxPoint = worldLocation + aabb:GetMaxPoint()
+    local centerPoint = worldLocation + aabb:GetCenter()
 
     minColor = minColor or Colors.BayLeaf
     maxColor = maxColor or Colors.Bouquet
@@ -67,6 +68,7 @@ function Debug.DrawDebugAABB(worldLocation, aabb, renderLayer, minColor, maxColo
 
     Debug.DrawWorldPoint(minPoint, nil, renderLayer, minColor)
     Debug.DrawWorldPoint(maxPoint, nil, renderLayer, maxColor)
+    Debug.DrawWorldPoint(centerPoint, nil, renderLayer, Colors.Yellow)
 
     local upperLeft = CreateVector2(minPoint.x, maxPoint.y)
     local bottomRight = CreateVector2(maxPoint.x, minPoint.y)

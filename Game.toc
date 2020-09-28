@@ -1,5 +1,5 @@
 ## Interface: 80300
-## SavedVariables: Game_Debug, Game_DebugViews
+## SavedVariables: Game_Debug, Game_DebugViews, Game_Levels
 
 Imports.lua
 
@@ -22,6 +22,9 @@ Physics/Physics.lua
 Networking/Messages.lua
 Networking/Networking.lua
 
+Level/Level.lua
+Assets/Levels/Test.lua
+
 Components/GameEntityComponent.lua
 
 Entities/GameEntity.lua
@@ -36,4 +39,5 @@ Entities/PlayerEntity.lua
 
 Server.lua
 Client.lua
+LevelEditor.lua
 Game.lua

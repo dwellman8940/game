@@ -25,6 +25,14 @@ function ColorProto:GetRGB()
     return self.r, self.g, self.b
 end
 
+function ColorProto:WithAlpha(alpha)
+    return CreateColor(self.r, self.g, self.b, alpha)
+end
+
+function ColorMetatable:__tostring()
+    return ("Color: r %f g %f b %f a %f"):format(self:GetRGBA())
+end
+
 Colors = {
     Black = CreateColor(0, 0, 0, 1),
     White = CreateColor(1, 1, 1, 1),

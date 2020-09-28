@@ -25,6 +25,11 @@ end
 function ServerMixin:BeginGame(playersInLobbby)
     self:SendMessageToAllClients("ResetGame")
 
+    local levelToLoad = "Test"
+    self:SendMessageToAllClients("LoadLevel", levelToLoad)
+
+    self:LoadLevel(levelToLoad)
+
     self.players = {}
 
     for i, playerName in ipairs(playersInLobbby) do
@@ -33,7 +38,10 @@ function ServerMixin:BeginGame(playersInLobbby)
         self.players[i] = player
         self:SendMessageToAllClients("InitPlayer", playerName, i)
     end
+end
 
+function ServerMixin:LoadLevel(levelName)
+    Level.Load(self, levelName)
     self:GetPhysicsSystem():FinalizeStaticShapes()
 end
 

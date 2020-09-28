@@ -3,21 +3,25 @@ setfenv(1, envTable)
 
 local PhysicsShapeMixin = {}
 
-function CreatePhysicsShape(worldLocation, vertices)
+function CreatePhysicsShape(geometryComponent, vertices)
     local physicsShape = CreateFromMixins(PhysicsShapeMixin)
-    physicsShape:Initialize(worldLocation, vertices)
+    physicsShape:Initialize(geometryComponent, vertices)
     return physicsShape
 end
 
-function PhysicsShapeMixin:Initialize(worldLocation, vertices)
+function PhysicsShapeMixin:Initialize(geometryComponent, vertices)
     assert(#vertices >= 3)
-    self.worldLocation = worldLocation
+    self.geometryComponent = geometryComponent
     self.vertices = vertices
     self:PreprocessVertices()
 end
 
-function PhysicsShapeMixin:SetWorldLocation(worldLocation)
-    self.worldLocation = worldLocation
+function PhysicsShapeMixin:GetGeometryComponent()
+    return self.geometryComponent
+end
+
+function PhysicsShapeMixin:GetVertices()
+    return self.vertices
 end
 
 function PhysicsShapeMixin:GetVerticesCenter()
@@ -25,7 +29,7 @@ function PhysicsShapeMixin:GetVerticesCenter()
 end
 
 function PhysicsShapeMixin:GetVerticesWorldCenter()
-    return self.worldLocation + self.verticesCenter
+    return self:GetWorldLocation() + self.verticesCenter
 end
 
 local function Project(worldLocation, physicsShape, axis)
@@ -101,7 +105,7 @@ local function MergeAxes(axes1, axes2)
 end
 
 function PhysicsShapeMixin:CollideWith(worldLocation, physicsShape)
-    local smallestOverlap, smallestAxis = SeparationAxisTest(MergeAxes(self.axes, physicsShape.axes), self.worldLocation, self, worldLocation, physicsShape)
+    local smallestOverlap, smallestAxis = SeparationAxisTest(MergeAxes(self.axes, physicsShape.axes), self:GetWorldLocation(), self, worldLocation, physicsShape)
     if smallestOverlap then
         local towards = self:GetVerticesWorldCenter() - (worldLocation + physicsShape:GetVerticesCenter())
         if towards:Dot(smallestAxis) > 0 then
@@ -112,7 +116,7 @@ function PhysicsShapeMixin:CollideWith(worldLocation, physicsShape)
 end
 
 function PhysicsShapeMixin:GetWorldLocation()
-    return self.worldLocation
+    return self.geometryComponent:GetWorldLocation()
 end
 
 function PhysicsShapeMixin:GetBounds()
@@ -151,11 +155,11 @@ end
 
 function PhysicsShapeMixin:RenderDebug(delta, renderGeometry, renderAABB)
     if renderGeometry then
-        Debug.DrawConvexTriangleMesh(self.worldLocation, self.vertices)
+        Debug.DrawConvexTriangleMesh(self:GetWorldLocation(), self.vertices)
         for i, normal in ipairs(self.normals) do
             local vertex = self.vertices[i]
             local nextVertex = self.vertices[Math.WrapIndex(i + 1, #self.vertices)]
-            local startLocation = self.worldLocation + Math.Lerp(vertex, nextVertex, .5)
+            local startLocation = self:GetWorldLocation() + Math.Lerp(vertex, nextVertex, .5)
             if IsAxis(self.axes, normal) then
                 Debug.DrawDebugLine(startLocation, startLocation + normal * 10, nil, Colors.Cyan, Colors.Cyan)
             else
@@ -165,6 +169,6 @@ function PhysicsShapeMixin:RenderDebug(delta, renderGeometry, renderAABB)
     end
 
     if renderAABB then
-        Debug.DrawDebugAABB(self.worldLocation, self.bounds)
+        Debug.DrawDebugAABB(self:GetWorldLocation(), self.bounds)
     end
 end

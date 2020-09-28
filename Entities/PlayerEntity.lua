@@ -1,6 +1,10 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local DebugView_EnableCollision = DebugViews.RegisterView("Player", "Enable Collision", true)
+local DebugView_ReplicateServerAABB = DebugViews.RegisterView("Player", "Replicate Server AABB")
+local DebugView_RemoteInterpolation = DebugViews.RegisterView("Player", "Remote Interpolation", true)
+
 PlayerEntityMixin = CreateFromMixins(GameEntityMixin)
 
 local PLAYER_WIDTH = 40
@@ -18,8 +22,7 @@ function PlayerEntityMixin:Initialize(parentEntity, relativeLocation)
         CreateVector2(PLAYER_WIDTH_HALF, -PLAYER_HEIGHT_HALF),
     }
 
-    local dynamicPhysics = true
-    self.geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, self, vertices, dynamicPhysics)
+    self.geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, self, vertices, GeometryType.Dynamic, GeometryOcclusion.Ignored)
 end
 
 function PlayerEntityMixin:Render(delta) -- override
@@ -79,11 +82,6 @@ function PlayerEntityMixin:MarkAsLocalPlayer(worldFrame)
     self.occlusionComponent = CreateGameEntityComponent(OcclusionComponentMixin, self, worldFrame)
 end
 
--- TODO: Handle this separate from the player
-function PlayerEntityMixin:AddOcclusionGeometry(geometryComponent)
-    self.occlusionComponent:AddGeometry(geometryComponent)
-end
-
 function PlayerEntityMixin:IsLocalPlayer()
     return self.isLocalPlayer
 end
@@ -118,7 +116,7 @@ function PlayerEntityMixin:TickClient(delta)
         self:ProcessPendingMovement()
 
         local targetLocation = self:GetWorldLocation() + self.velocity:GetSafeNormal() * PlayerSpeed * delta
-        local adjustedLocation = self.geometryComponent:CollideWithStatic(targetLocation)
+        local adjustedLocation = DebugView_EnableCollision:IsViewEnabled() and self.geometryComponent:CollideWithStatic(targetLocation) or targetLocation
 
         self:SetWorldLocation(adjustedLocation)
         
@@ -129,13 +127,13 @@ function PlayerEntityMixin:TickClient(delta)
             else
                 self.lastSentVelocity = self.velocity:Clone()
             end
-           
+         
             self:GetClient():SendMessageToPeers("OnMovement", self:GetPlayerID(), worldLocation, self.velocity)
         end
     else
         if self.remoteVelocity then
             local remoteDelta = GetTime() - self.remoteTimestamp
-            local lerpAmount = Math.MapRangeClamped(0, 5, .08, .2, remoteDelta)
+            local lerpAmount = DebugView_RemoteInterpolation:IsViewEnabled() and Math.MapRangeClamped(0, 5, .08, .2, remoteDelta) or 1
 
             local targetLocation = self.remoteLocation + self.remoteVelocity:GetSafeNormal() * PlayerSpeed * delta
             local adjustedLocation = self.geometryComponent:CollideWithStatic(targetLocation)
@@ -148,8 +146,14 @@ end
 
 function PlayerEntityMixin:TickServer(delta)
     if self.remoteVelocity then
-        self.remoteLocation = self.remoteLocation + self.remoteVelocity * PlayerSpeed * delta
-        self:SetWorldLocation(self.remoteLocation)
+        local targetLocation = self.remoteLocation + self.remoteVelocity:GetSafeNormal() * PlayerSpeed * delta
+        local adjustedLocation = self.geometryComponent:CollideWithStatic(targetLocation)
+        self.remoteLocation = adjustedLocation
+        self:SetWorldLocation(adjustedLocation)
+
+        if DebugView_ReplicateServerAABB:IsViewEnabled() then
+            self:GetServer():SendMessageToAllClients("Debug_ReplicateAABB", self.geometryComponent:GetBounds():Translate(adjustedLocation))
+        end
     end
 end
 

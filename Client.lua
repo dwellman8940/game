@@ -20,7 +20,7 @@ WorldFrame:SetWidth(1024)
 WorldFrame:SetHeight(1024)
 
 --TODO: Should not be here
-local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", -8)
+local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", nil, -8)
 Background:SetTexture("Interface/Addons/Game/Assets/Textures/grid", "REPEAT", "REPEAT")
 Background:SetHorizTile(true)
 Background:SetVertTile(true)
@@ -64,6 +64,11 @@ function ClientMixin:ResetGame()
 
     self.elapsed = 0
     self.lastTickTime = GetTime()
+end
+
+function ClientMixin:LoadLevel(levelName)
+    Level.Load(self, levelName)
+    self:GetPhysicsSystem():FinalizeStaticShapes()
 end
 
 function ClientMixin:CreateNetworkConnection(lobbyCode, localServer)
@@ -251,38 +256,16 @@ function ClientMessageHandlers:ResetGame()
     self:ResetGame()
 end
 
+function ClientMessageHandlers:LoadLevel(levelName)
+    self:LoadLevel(levelName)
+end
+
 function ClientMessageHandlers:InitPlayer(playerName, playerID)
     if playerName == UnitName("player") then
         self.localPlayer = self:CreateEntity(PlayerEntityMixin)
         self.localPlayer:SetPlayerID(playerID)
         self.localPlayer:MarkAsLocalPlayer(WorldFrame)
         self:BindKeyboardToPlayer(self.localPlayer)
-
-        local vertices = {}
-        local WIDTH = 50
-        local HEIGHT = 50
-        table.insert(vertices, CreateVector2(-WIDTH, -HEIGHT))
-        table.insert(vertices, CreateVector2(-WIDTH * 2, 0))
-        table.insert(vertices, CreateVector2(-WIDTH, HEIGHT))
-        table.insert(vertices, CreateVector2(-WIDTH, HEIGHT * 5))
-        table.insert(vertices, CreateVector2(WIDTH * 2, HEIGHT * 5))
-        table.insert(vertices, CreateVector2(0, WIDTH * 1.5))
-        table.insert(vertices, CreateVector2(WIDTH, HEIGHT))
-        table.insert(vertices, CreateVector2(WIDTH, -HEIGHT))
-
-        --table.insert(vertices, CreateVector2(WIDTH * 2, -HEIGHT * 2))
-
-        --local testCollision = self:CreateEntity(GameEntityMixin, nil, CreateVector2(-200, 0))
-        --local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
-        --self.localPlayer:AddOcclusionGeometry(geometryComponent)
-
-        for i = 1, 40 do
-            local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 205 - 500, 0))
-            local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2, vertices)
-            self.localPlayer:AddOcclusionGeometry(geometryComponent2)
-        end
-
-        self:GetPhysicsSystem():FinalizeStaticShapes()
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)
@@ -296,4 +279,8 @@ function ClientMessageHandlers:OnMovement(playerID, location, velocity)
     if remotePlayer then
         remotePlayer:ApplyRemoveMovement(location, velocity)
     end
+end
+
+function ClientMessageHandlers:Debug_ReplicateAABB(aabb)
+    Debug.DrawDebugAABB(ZeroVector, aabb)
 end

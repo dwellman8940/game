@@ -118,7 +118,7 @@ local function DrawDebug(node, parentNode, parentColor, randomStream)
 
     Debug.DrawDebugAABB(ZeroVector, node.boundingVolume, nil, color, color, color)
     if parentNode then
-        Debug.DrawDebugLine(parentNode.boundingVolume:GetCenter(), node.boundingVolume:GetCenter(), nil, parentColor, color)
+        Debug.DrawDebugLine(parentNode.boundingVolume:GetCenter(), node.boundingVolume:GetCenter(), nil, parentColor:WithAlpha(.5), color:WithAlpha(.5))
     end
 
     if not node.shape then

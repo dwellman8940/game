@@ -26,7 +26,7 @@ function GameMixin:Run()
          -- todo: real lobby
         local playersInLobby = {
             "Ladreiline",
-            --"Cereekeloran",
+            "Cereekeloran",
             --"Dorbland"
         }
 

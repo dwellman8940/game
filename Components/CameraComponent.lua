@@ -1,6 +1,8 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local DebugView_EnableFog = DebugViews.RegisterView("Camera", "Enable Fog", true)
+
 CameraComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 
 function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
@@ -17,7 +19,7 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     self.fogTexture:SetParent(worldFrame)
     self.fogTexture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(40))
     self.fogTexture:AddMaskTexture(self.maskTexture)
-    --self.fogTexture:Show()
+    self.fogTexture:Show()
 
     self.worldFrame = worldFrame
 end
@@ -26,7 +28,7 @@ function CameraComponentMixin:Destroy() -- override
     Pools.Texture.ReleaseWorldMaskTexture(self.maskTexture)
     self.maskTexture = nil
 
-    Pools.Texture.ReleaseWorldTexture(self.fogTexture)
+    Pools.Texture.ReleaseRenderTexture(self.fogTexture)
     self.fogTexture = nil
 
     GameEntityComponentMixin.Destroy(self)
@@ -41,6 +43,8 @@ function CameraComponentMixin:Render(delta) -- override
 
     self.targetWorldOffset = Math.LerpOverTime(self.targetWorldOffset or self:GetWorldLocation(), self:GetWorldLocation(), .08, delta)
     self:SetWorldOffset(self.targetWorldOffset)
+
+    self.fogTexture:SetShown(DebugView_EnableFog:IsViewEnabled())
 end
 
 function CameraComponentMixin:SetSize(width, height)

@@ -1,27 +1,48 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-local DebugView_RawVertices = DebugViews.RegisterView("GeometryComponent", "Raw Vertices")
-local DebugView_ConvexVertices = DebugViews.RegisterView("GeometryComponent", "Convex Vertices")
-local DebugView_ConvexIndices = DebugViews.RegisterView("GeometryComponent", "Convex Indices")
+GeometryType =
+{
+    Static = 1,
+    Mobile = 2,
+    Dynamic = 3
+}
+
+GeometryOcclusion =
+{
+    Opaque = 1,
+    Ignored = 2,
+}
+
+local DebugView_RawVertices = DebugViews.RegisterView("Geometry", "Raw Vertices")
+local DebugView_ConvexVertices = DebugViews.RegisterView("Geometry", "Convex Vertices")
+local DebugView_ConvexIndices = DebugViews.RegisterView("Geometry", "Convex Indices")
 
 GeometryComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 
-function GeometryComponentMixin:Initialize(owningEntity, vertices, isDynamicShape) -- override
+function GeometryComponentMixin:Initialize(owningEntity, vertices, geometryType, geometryOcclusion) -- override
+    assert(vertices)
+    assert(#vertices > 3)
+    assert(geometryType)
+    assert(geometryOcclusion)
+
     GameEntityComponentMixin.Initialize(self, owningEntity)
 
     self.vertices = vertices
 
     self.convexVertexLists = Polygon.ConcaveDecompose(self.vertices)
-    self.isDynamicShape = isDynamicShape
+    self.geometryType = geometryType
+    self.geometryOcclusion = geometryOcclusion
 
     self.bounds = Polygon.CalculateBoundsFromMultiple(self.convexVertexLists)
 
-    if self.isDynamicShape then
+    if self.geometryType == GeometryType.Dynamic then
         assert(#self.convexVertexLists == 1)
-        self.dynamicPhysicsShape = self:GetPhysicsSystem():RegisterDynamicGeometry(self:GetWorldLocation(), self.convexVertexLists[1])
+        self.dynamicPhysicsShape = self:GetPhysicsSystem():RegisterDynamicGeometry(self, self.convexVertexLists[1])
+    elseif self.geometryType == GeometryType.Static then
+        self:GetPhysicsSystem():RegisterStaticGeometryList(self, self.convexVertexLists)
     else
-        self:GetPhysicsSystem():RegisterStaticGeometryList(self:GetWorldLocation(), self.convexVertexLists)
+        assert(false) -- todo
     end
 end
 
@@ -38,6 +59,10 @@ end
 
 function GeometryComponentMixin:GetName()
     return "GeometryComponent"
+end
+
+function GeometryComponentMixin:GetOcclusionType()
+    return self.geometryOcclusion
 end
 
 function GeometryComponentMixin:GetBounds()
@@ -61,14 +86,12 @@ function GeometryComponentMixin:GetDynamicPhysicsShape()
 end
 
 function GeometryComponentMixin:CollideWithStatic(worldLocation)
-    assert(self.isDynamicShape and self.dynamicPhysicsShape)
+    assert(self.geometryType == GeometryType.Dynamic and self.dynamicPhysicsShape)
     return self:GetPhysicsSystem():CollideShapeWithStatic(worldLocation, self.dynamicPhysicsShape)
 end
 
 function GeometryComponentMixin:TickClient(delta) -- override
-    if self.isDynamicShape then
-        self.dynamicPhysicsShape:SetWorldLocation(self:GetWorldLocation())
-    end
+
 end
 
 function GeometryComponentMixin:Render(delta) -- override
@@ -88,12 +111,13 @@ function GeometryComponentMixin:Render(delta) -- override
         end
     end
 
-    if self.isDynamicShape then
+    if self.geometryType == GeometryType.Dynamic then
+        -- todo: remove rendering from this component
         return
     end
 
     if self.textureList then
-        if self.isDynamicShape then
+        if self.geometryType == GeometryType.Dynamic then
             for i, vertices in ipairs(self:GetConvexVertexList()) do
                 Rendering.DrawConvexTriangleMesh(self:GetWorldLocation(), vertices, self.textureList[i])
             end

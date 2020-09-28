@@ -1,6 +1,9 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local DebugView_OutgoingMessages = DebugViews.RegisterView("Networking", "Outgoing Messages")
+local DebugView_IncomingMessages = DebugViews.RegisterView("Networking", "Incoming Messages")
+
 local MessagesByName = {}
 local MessagesByByte = {}
 
@@ -140,6 +143,28 @@ TARGET_CODE_ALL_CLIENTS = "A"
 TARGET_CODE_SERVER_AND_PEERS = "P"
 TARGET_CODE_SERVER = "S"
 
+local function CreateSerializeClosure(messageName, serializeFn)
+    return function(...)
+        if DebugView_OutgoingMessages:IsViewEnabled() then
+            Debug.Print("Outgoing message:", messageName, ...)
+        end
+        return serializeFn(...)
+    end
+end
+
+local function DeserializeHelper(messageName, ...)
+    if DebugView_IncomingMessages:IsViewEnabled() then
+        Debug.Print("Incoming message:", messageName, ...)
+    end
+    return ...
+end
+
+local function CreateDeserializeClosure(messageName, deserializeFn)
+    return function(messageData)
+        return DeserializeHelper(messageName, deserializeFn(messageData))
+    end
+end
+
 local AddMessage
 do
     local MessageByteEncoding = {
@@ -155,8 +180,8 @@ do
             MessageName = messageName,
             MessageID = g_nextMessageID,
             MessageByte = MessageByteEncoding[g_nextMessageID],
-            Serialize = serializeFn or NoSerialize,
-            Deserialize = deserializeFn and function(messageData) return deserializeFn(DecodeEntireString(messageData)) end or NoDeserialize,
+            Serialize = CreateSerializeClosure(messageName, serializeFn or NoSerialize),
+            Deserialize = CreateDeserializeClosure(messageName, deserializeFn and function(messageData) return deserializeFn(DecodeEntireString(messageData)) end or NoDeserialize),
             ValidConnections = InvertIndexedTable{ ... }
         }
 
@@ -168,6 +193,21 @@ do
 end
 
 AddMessage("ResetGame", nil, nil, TARGET_CODE_ALL_CLIENTS)
+
+AddMessage(
+    "LoadLevel",
+
+    function(levelName)
+        return EncodeEntireString(levelName)
+    end,
+
+    function(messageData)
+        local levelName = messageData
+        return levelName
+    end,
+
+    TARGET_CODE_ALL_CLIENTS
+)
 
 AddMessage(
     "InitPlayer",
@@ -202,4 +242,22 @@ AddMessage(
     end,
 
     TARGET_CODE_SERVER_AND_PEERS
+)
+
+AddMessage(
+    "Debug_ReplicateAABB",
+
+    function(aabb)
+        return EncodeFloat(aabb:GetMinPoint():GetX()) .. EncodeFloat(aabb:GetMinPoint():GetY()) .. EncodeFloat(aabb:GetMaxPoint():GetX()) .. EncodeFloat(aabb:GetMaxPoint():GetX())
+    end,
+
+    function(messageData)
+        local minX = messageData:sub(1, 4)
+        local minY = messageData:sub(5, 8)
+        local maxX = messageData:sub(9, 12)
+        local maxY = messageData:sub(13, 16)
+        return CreateAABB(CreateVector2(DecodeFloat(minX), DecodeFloat(minY)), CreateVector2(DecodeFloat(maxX), DecodeFloat(maxY)))
+    end,
+
+    TARGET_CODE_ALL_CLIENTS
 )

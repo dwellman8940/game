@@ -85,8 +85,8 @@ function Pools.Texture.AcquireRenderTexture()
     return (g_renderTexturePool:Acquire())
 end
 
-function Pools.Texture.ReleaseRenderexture(texture)
-    g_renderTexturePool:Release(texture)
+function Pools.Texture.ReleaseRenderTexture(texture)
+    assert(g_renderTexturePool:Release(texture))
 end
 
 function Pools.Texture.AcquireWorldTexture()
@@ -102,7 +102,7 @@ function Pools.Texture.AcquireWorldTextureArray(numTextures)
 end
 
 function Pools.Texture.ReleaseWorldTexture(texture)
-    g_worldTexturePool:Release(texture)
+    assert(g_worldTexturePool:Release(texture))
 end
 
 function Pools.Texture.ReleaseWorldTextureArray(textureArray)
@@ -116,7 +116,7 @@ function Pools.Texture.AcquireWorldMaskTexture()
 end
 
 function Pools.Texture.ReleaseWorldMaskTexture(texture)
-    g_maskTexturePool:Release(texture)
+    assert(g_maskTexturePool:Release(texture))
 end
 
 function Pools.Texture.AcquireLineTexture()
@@ -124,7 +124,7 @@ function Pools.Texture.AcquireLineTexture()
 end
 
 function Pools.Texture.ReleaseLineTexture(texture)
-    g_worldLinePool:Release(texture)
+    assert(g_worldLinePool:Release(texture))
 end
 
 function Pools.FontString.AcquireWorldFontString()
@@ -132,5 +132,5 @@ function Pools.FontString.AcquireWorldFontString()
 end
 
 function Pools.FontString.ReleaseWorldFontString(fontString)
-    g_worldFontStringPool:Release(fontString)
+    assert(g_worldFontStringPool:Release(fontString))
 end
