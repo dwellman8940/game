@@ -18,7 +18,7 @@ end
 
 function GameEntityComponentMixin:Initialize(owningEntity, ...)
     owningEntity:AddComponent(self)
-    self.relativeLocation = CreateVector2(0, 0)
+    self.relativeLocation = CreateVector2()
 end
 
 function GameEntityComponentMixin:Destroy()

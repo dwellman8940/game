@@ -1,7 +1,6 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-local DebugView_DynamicGeometry = DebugViews.RegisterView("Physics", "Dynamic Geometry")
 local DebugView_RawVertices = DebugViews.RegisterView("GeometryComponent", "Raw Vertices")
 local DebugView_ConvexVertices = DebugViews.RegisterView("GeometryComponent", "Convex Vertices")
 local DebugView_ConvexIndices = DebugViews.RegisterView("GeometryComponent", "Convex Indices")
@@ -80,10 +79,6 @@ function GeometryComponentMixin:Render(delta) -- override
     end
 
     if self.isDynamicShape then
-        -- TODO: better rendering controls, remove rendering entirely from geo component
-        if DebugView_DynamicGeometry:IsViewEnabled() then
-            self.dynamicPhysicsShape:RenderDebug(delta)
-        end
         return
     end
 

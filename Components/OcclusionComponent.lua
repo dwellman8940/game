@@ -82,7 +82,6 @@ function OcclusionComponentMixin:Render(delta) -- override
     self:ReleaseAllTextures()
 
     local worldBoundVertices = self:GetClient():GetRenderFrameWorldBoundVertices()
-    --Debug.DrawWorldVerts(ZeroVector, worldBoundVertices)
 
     local rayOrigin = self:GetWorldLocation()
     for componentIndex, geometryComponent in ipairs(self.geometryComponents) do
@@ -121,8 +120,8 @@ function OcclusionComponentMixin:Render(delta) -- override
                 self:DrawShadowPolygon(CreateConnectingVertices(rightVertIndex, leftVertIndex, clippedVertices, geometryComponentLocation, rayOrigin, worldBoundVertices))
 
                 if DebugView_ShadowRays:IsViewEnabled() then
-                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[leftVertIndex] - rayOrigin):GetNormal() * 1000, nil, .8, .8, 1, .8, .8, 1)
-                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[rightVertIndex] - rayOrigin):GetNormal() * 1000, nil, 0, 0, 0, 0, 0, 0)
+                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[leftVertIndex] - rayOrigin):GetNormal() * 1000, nil, Colors.Periwinkle, Colors.Periwinkle)
+                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[rightVertIndex] - rayOrigin):GetNormal() * 1000, nil, Colors.Black, Colors.Black)
                 end
             end
         end

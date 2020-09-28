@@ -45,6 +45,7 @@ Import("UnitName")
 Import("IsInGroup")
 Import("GetCursorPosition")
 Import("Ambiguate")
+Import("debugprofilestop")
 
 Import("C_ChatInfo")
 Import("C_Timer")

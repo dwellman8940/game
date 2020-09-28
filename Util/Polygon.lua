@@ -87,8 +87,8 @@ end
 -- Bayazit's algorithm - https://mpen.ca/406/bayazit
 function Polygon.ConcaveDecompose(vertices)
     local list = {}
-    local lowerIntersection = CreateVector2(0, 0)
-    local upperIntersection = CreateVector2(0, 0)
+    local lowerIntersection = CreateVector2()
+    local upperIntersection = CreateVector2()
 
     local lowerIndex = 1
     local upperIndex = 1

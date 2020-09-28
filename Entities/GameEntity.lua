@@ -21,7 +21,7 @@ end
 
 function GameEntityMixin:Initialize(parentEntity, relativeLocation)
     setmetatable(self, NameMetatable)
-    self:SetRelativeLocation(relativeLocation or CreateVector2(0, 0))
+    self:SetRelativeLocation(relativeLocation or CreateVector2())
     self.parentEntity = parentEntity
     self.childEntities = {}
     self.components = {}

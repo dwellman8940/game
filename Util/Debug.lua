@@ -12,14 +12,17 @@ function Debug.Print(...)
     print(("|cBBBBBBBB%s:|r %s"):format(UnitName("player"), s))
 end
 
-function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, startColor, endColor)
     local line = Pools.Texture.AcquireLineTexture()
 
     Rendering.DrawLineAtWorldPoints(line, startWorldLocation, endWorldLocation)
 
     line:SetThickness(2)
     line:SetColorTexture(1, 1, 1, 1)
-    line:SetGradient("HORIZONTAL", firstR or 1, firstG or 0, firstB or 0, secondR or 0, secondG or 1, secondB or 0)
+    local firstR, firstG, firstB = (startColor or Colors.Red):GetRGB()
+    local secondR, secondG, secondB = (endColor or Colors.Green):GetRGB()
+
+    line:SetGradient("HORIZONTAL", firstR, firstG, firstB, secondR, secondG, secondB)
     line:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))
 
     line:Show()
@@ -27,20 +30,20 @@ function Debug.DrawDebugLine(startWorldLocation, endWorldLocation, renderLayer, 
     C_Timer.NewTimer(0, function() Pools.Texture.ReleaseLineTexture(line) end)
 end
 
-function Debug.DrawWorldVerts(worldLocation, verts, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+function Debug.DrawWorldVerts(worldLocation, verts, renderLayer, firstColor, secondColor)
     for i, vert in ipairs(verts) do
         local nextVert = i ~= #vert and verts[i + 1] or verts[1]
 
-        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer, firstColor, secondColor)
     end
 end
 
-function Debug.DrawWorldVertsWithIndices(worldLocation, verts, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+function Debug.DrawWorldVertsWithIndices(worldLocation, verts, renderLayer, firstColor, secondColor)
     for i, vert in ipairs(verts) do
         local prevVert = i ~= 1 and verts[i - 1] or verts[#verts]
         local nextVert = i ~= #vert and verts[i + 1] or verts[1]
 
-        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer, firstR, firstG, firstB, secondR, secondG, secondB)
+        Debug.DrawDebugLine(worldLocation + vert, worldLocation + nextVert, renderLayer, firstColor, secondColor)
 
         if prevVert == vert or nextVert == vert then
             Debug.DrawWorldString(worldLocation + vert, i, renderLayer)
@@ -53,24 +56,43 @@ function Debug.DrawWorldVertsWithIndices(worldLocation, verts, renderLayer, firs
     end
 end
 
-function Debug.DrawConvexTriangleMesh(worldLocation, vertices)
-    --Debug.DrawWorldVerts(worldLocation, vertices)
 
+function Debug.DrawDebugAABB(worldLocation, aabb, renderLayer, minColor, maxColor, otherColor)
+    local minPoint = worldLocation + aabb:GetMinPoint()
+    local maxPoint = worldLocation + aabb:GetMaxPoint()
+
+    minColor = minColor or Colors.BayLeaf
+    maxColor = maxColor or Colors.Bouquet
+    otherColor = otherColor or Colors.Goblin
+
+    Debug.DrawWorldPoint(minPoint, nil, renderLayer, minColor)
+    Debug.DrawWorldPoint(maxPoint, nil, renderLayer, maxColor)
+
+    local upperLeft = CreateVector2(minPoint.x, maxPoint.y)
+    local bottomRight = CreateVector2(maxPoint.x, minPoint.y)
+    Debug.DrawDebugLine(minPoint, upperLeft, renderLayer, minColor, otherColor)
+    Debug.DrawDebugLine(upperLeft, maxPoint, renderLayer, otherColor, maxColor)
+    Debug.DrawDebugLine(maxPoint, bottomRight, renderLayer, maxColor, otherColor)
+    Debug.DrawDebugLine(bottomRight, minPoint, renderLayer, otherColor, minColor)
+end
+
+
+function Debug.DrawConvexTriangleMesh(worldLocation, vertices)
     local numTriangles = #vertices - 2
     for triangleIndex = 1, numTriangles do
         local triVert1 = vertices[1]
         local triVert2 = vertices[triangleIndex + 1]
         local triVert3 = vertices[triangleIndex + 2]
 
-        Debug.DrawDebugLine(worldLocation + triVert1, worldLocation + triVert2, nil, 1, 1, 1, 1, 1, 1)
-        Debug.DrawDebugLine(worldLocation + triVert2, worldLocation + triVert3, nil, 1, 0, 1, 1, 0, 1)
-        Debug.DrawDebugLine(worldLocation + triVert3, worldLocation + triVert1, nil, 1, 1, 0, 1, 1, 0)
+        Debug.DrawDebugLine(worldLocation + triVert1, worldLocation + triVert2, nil, Colors.White, Colors.White)
+        Debug.DrawDebugLine(worldLocation + triVert2, worldLocation + triVert3, nil, Colors.Magenta, Colors.Magenta)
+        Debug.DrawDebugLine(worldLocation + triVert3, worldLocation + triVert1, nil, Colors.Yellow, Colors.Yellow)
     end
 end
 
-function Debug.DrawWorldPoint(worldLocation, pointSize, renderLayer, r, g, b, a)
+function Debug.DrawWorldPoint(worldLocation, pointSize, renderLayer, color)
     local pointTexture = Pools.Texture.AcquireWorldTexture()
-    pointTexture:SetColorTexture(r or 1, g or 0, b or 1, a or 1)
+    pointTexture:SetColorTexture((color or Colors.Magenta):GetRGBA())
     pointTexture:SetWidth(pointSize or 5)
     pointTexture:SetHeight(pointSize or 5)
     pointTexture:SetDrawLayer(Rendering.RenderDrawToWidgetLayer(renderLayer or 41))

@@ -24,6 +24,10 @@ function PhysicsShapeMixin:GetVerticesCenter()
     return self.verticesCenter
 end
 
+function PhysicsShapeMixin:GetVerticesWorldCenter()
+    return self.worldLocation + self.verticesCenter
+end
+
 local function Project(worldLocation, physicsShape, axis)
     local vertices = physicsShape.vertices
     local min
@@ -99,7 +103,7 @@ end
 function PhysicsShapeMixin:CollideWith(worldLocation, physicsShape)
     local smallestOverlap, smallestAxis = SeparationAxisTest(MergeAxes(self.axes, physicsShape.axes), self.worldLocation, self, worldLocation, physicsShape)
     if smallestOverlap then
-        local towards = (self.worldLocation + self:GetVerticesCenter()) - (worldLocation + physicsShape:GetVerticesCenter())
+        local towards = self:GetVerticesWorldCenter() - (worldLocation + physicsShape:GetVerticesCenter())
         if towards:Dot(smallestAxis) > 0 then
             return -smallestAxis, smallestOverlap
         end
@@ -107,13 +111,25 @@ function PhysicsShapeMixin:CollideWith(worldLocation, physicsShape)
     end
 end
 
+function PhysicsShapeMixin:GetWorldLocation()
+    return self.worldLocation
+end
+
+function PhysicsShapeMixin:GetBounds()
+    return self.bounds
+end
+
+function PhysicsShapeMixin:GetWorldBounds()
+    return self.bounds:Translate(self:GetWorldLocation())
+end
+
 function PhysicsShapeMixin:PreprocessVertices()
     self.normals = {}
     self.axes = {}
-    self.verticesCenter = CreateVector2(0, 0)
+    self.bounds = CreateAABB()
     for vertexIndex, vertex in ipairs(self.vertices) do
         local nextVertex = self.vertices[Math.WrapIndex(vertexIndex + 1, #self.vertices)]
-        self.verticesCenter = self.verticesCenter + vertex
+        self.bounds:InlineExpandToContainPoint(vertex)
         local line = vertex - nextVertex
         local normal = line:GetNormal():ToPerpendicular()
         table.insert(self.normals, normal)
@@ -121,7 +137,7 @@ function PhysicsShapeMixin:PreprocessVertices()
             table.insert(self.axes, normal)
         end
     end
-    self.verticesCenter = self.verticesCenter / #self.vertices
+    self.verticesCenter = self.bounds:GetCenter()
 end
 
 local function IsAxis(axes, normal)
@@ -133,16 +149,22 @@ local function IsAxis(axes, normal)
     return false
 end
 
-function PhysicsShapeMixin:RenderDebug(delta)     
-    Debug.DrawConvexTriangleMesh(self.worldLocation, self.vertices)
-    for i, normal in ipairs(self.normals) do
-        local vertex = self.vertices[i]
-        local nextVertex = self.vertices[Math.WrapIndex(i + 1, #self.vertices)]
-        local startLocation = self.worldLocation + Math.Lerp(vertex, nextVertex, .5)
-        if IsAxis(self.axes, normal) then
-            Debug.DrawDebugLine(startLocation, startLocation + normal * 10, nil, 0, 1, 1, 0, 1, 1)
-        else
-            Debug.DrawDebugLine(startLocation, startLocation + normal * 10, nil, 0, 0, 1, 0, 0, 1)
+function PhysicsShapeMixin:RenderDebug(delta, renderGeometry, renderAABB)
+    if renderGeometry then
+        Debug.DrawConvexTriangleMesh(self.worldLocation, self.vertices)
+        for i, normal in ipairs(self.normals) do
+            local vertex = self.vertices[i]
+            local nextVertex = self.vertices[Math.WrapIndex(i + 1, #self.vertices)]
+            local startLocation = self.worldLocation + Math.Lerp(vertex, nextVertex, .5)
+            if IsAxis(self.axes, normal) then
+                Debug.DrawDebugLine(startLocation, startLocation + normal * 10, nil, Colors.Cyan, Colors.Cyan)
+            else
+                Debug.DrawDebugLine(startLocation, startLocation + normal * 10, nil, Colors.Blue, Colors.Blue)
+            end
         end
+    end
+
+    if renderAABB then
+        Debug.DrawDebugAABB(self.worldLocation, self.bounds)
     end
 end

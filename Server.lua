@@ -33,6 +33,8 @@ function ServerMixin:BeginGame(playersInLobbby)
         self.players[i] = player
         self:SendMessageToAllClients("InitPlayer", playerName, i)
     end
+
+    self:GetPhysicsSystem():FinalizeStaticShapes()
 end
 
 function ServerMixin:GetPhysicsSystem()

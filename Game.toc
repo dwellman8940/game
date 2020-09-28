@@ -3,6 +3,8 @@
 
 Imports.lua
 
+Util/Random.lua
+Util/Color.lua
 Util/DebugViews.lua
 Util/Debug.lua
 Util/Math.lua
@@ -10,13 +12,15 @@ Util/Pools.lua
 Util/Rendering.lua
 Util/Polygon.lua
 
+Math/Vector.lua
+Math/AABB.lua
+
+Physics/AABBTree.lua
 Physics/PhysicsShape.lua
 Physics/Physics.lua
 
 Networking/Messages.lua
 Networking/Networking.lua
-
-Math/Vector.lua
 
 Components/GameEntityComponent.lua
 

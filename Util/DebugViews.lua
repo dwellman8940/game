@@ -36,10 +36,6 @@ function ViewProto:IsViewEnabled()
     return self.enabledState
 end
 
-function ViewProto:GetViewEnabled()
-    return self.enabledState
-end
-
 function ViewProto:GetCategoryName()
     return self.categoryName
 end
@@ -106,15 +102,23 @@ end
 
 local DebugViewPane = CreateFrame("Frame", nil, UIParent)
 DebugViewPane:SetWidth(200)
-DebugViewPane:SetHeight(500)
-DebugViewPane:SetPoint("RIGHT")
+DebugViewPane:SetHeight(700)
+DebugViewPane:SetPoint("RIGHT", -2, 0)
 DebugViewPane:SetToplevel(true)
 DebugViewPane:SetFrameStrata("HIGH")
 
 do
-    local Background = DebugViewPane:CreateTexture(nil, "BACKGROUND")
-    Background:SetColorTexture(0, 0, 0, 1)
+    local Background = DebugViewPane:CreateTexture(nil, "BACKGROUND", -7)
+    Background:SetColorTexture(0, .1, .1, 1)
     Background:SetAllPoints(DebugViewPane)
+end
+
+do
+    local Border = DebugViewPane:CreateTexture(nil, "BACKGROUND", -8)
+    Border:SetColorTexture(0, 0, 0, 1)
+    local BORDER_SIZE = 2
+    Border:SetPoint("TOPLEFT", -BORDER_SIZE, BORDER_SIZE)
+    Border:SetPoint("BOTTOMRIGHT", BORDER_SIZE, -BORDER_SIZE)
 end
 
 do
@@ -166,6 +170,7 @@ do
     function RebuildDebugUI()
         rowPool:ReleaseAll()
         
+        local panelHeight = 0
         local yPadding = 0
         local previousRow
         for categoryName, categoricalDebugViews in pairs(categoriesToViews) do
@@ -176,6 +181,7 @@ do
                 header:SetPoint("TOP", DebugViewPane, "TOP", 0, yPadding)
             end
             header:AsHeader(categoryName)
+            panelHeight = panelHeight + header:GetHeight() + yPadding
             previousRow = header
             for i, debugView in ipairs(categoricalDebugViews) do
                 local row = rowPool:Acquire()
@@ -186,9 +192,12 @@ do
                 end
 
                 row:AsRow(debugView)
+                panelHeight = panelHeight + header:GetHeight() + yPadding
 
                 previousRow = row
             end
         end
+
+        DebugViewPane:SetHeight(panelHeight)
     end
 end

@@ -267,11 +267,13 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         --local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
         --self.localPlayer:AddOcclusionGeometry(geometryComponent)
 
-        for i = 1, 10 do
-            local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 190, 0))
+        for i = 1, 20 do
+            local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 205 - 500, 0))
             local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2, vertices)
             self.localPlayer:AddOcclusionGeometry(geometryComponent2)
         end
+
+        self:GetPhysicsSystem():FinalizeStaticShapes()
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
         remotePlayer:SetPlayerID(playerID)

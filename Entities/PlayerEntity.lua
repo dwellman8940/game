@@ -129,7 +129,7 @@ function PlayerEntityMixin:TickClient(delta)
             else
                 self.lastSentVelocity = self.velocity:Clone()
             end
-            
+           
             self:GetClient():SendMessageToPeers("OnMovement", self:GetPlayerID(), worldLocation, self.velocity)
         end
     else

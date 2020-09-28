@@ -1,96 +1,95 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-local Vector2Mixin = {}
-
-local Vector2Metatable = { __index = Vector2Mixin }
+local Vector2Proto = {}
+local Vector2Metatable = { __index = Vector2Proto }
 
 function CreateVector2(x, y)
     local vector2 = setmetatable({}, Vector2Metatable)
-    vector2:SetXY(x, y)
+    vector2:SetXY(x or 0, y or 0)
     return vector2
 end
 
-function Vector2Mixin:SetXY(x, y)
+function Vector2Proto:SetXY(x, y)
     self.x = x
     self.y = y
 end
 
-function Vector2Mixin:GetXY()
+function Vector2Proto:GetXY()
     return self.x, self.y
 end
 
-function Vector2Mixin:GetX()
+function Vector2Proto:GetX()
     return self.x
 end
 
-function Vector2Mixin:GetY()
+function Vector2Proto:GetY()
     return self.y
 end
 
-function Vector2Mixin:Cross(other)
+function Vector2Proto:Cross(other)
     return self.x * other.y - self.y * other.x
 end
 
-function Vector2Mixin:ToPerpendicular()
+function Vector2Proto:ToPerpendicular()
     return CreateVector2(self.y, -self.x)
 end
 
-function Vector2Mixin:IsLeftOf(other)
+function Vector2Proto:IsLeftOf(other)
     return self:Cross(other) < 0
 end
 
-function Vector2Mixin:IsLeftOrOnOf(other)
+function Vector2Proto:IsLeftOrOnOf(other)
     return self:Cross(other) <= 0
 end
 
-function Vector2Mixin:IsRightOf(other)
+function Vector2Proto:IsRightOf(other)
     return self:Cross(other) > 0
 end
 
-function Vector2Mixin:IsRightOrOnOf(other)
+function Vector2Proto:IsRightOrOnOf(other)
     return self:Cross(other) >= 0
 end
 
-function Vector2Mixin:GetNormal()
+function Vector2Proto:GetNormal()
     local length = self:Length()
     return CreateVector2(self.x / length, self.y / length)
 end
 
-function Vector2Mixin:GetSafeNormal(tolerance)
+function Vector2Proto:GetSafeNormal(tolerance)
     local lengthSq = self:LengthSquared()
 
     if lengthSq <= (tolerance or Math.SmallNumber) then
-        return CreateVector2(0, 0)
+        return CreateVector2()
     end
 
     local length = math.sqrt(lengthSq)
     return CreateVector2(self.x / length, self.y / length)
 end
 
-function Vector2Mixin:LengthSquared()
+function Vector2Proto:LengthSquared()
     return self.x * self.x + self.y * self.y
 end
 
-function Vector2Mixin:Length()
+function Vector2Proto:Length()
     return math.sqrt(self.x * self.x + self.y * self.y)
 end
 
-function Vector2Mixin:DistanceSquared(other)
+function Vector2Proto:DistanceSquared(other)
     local deltaX = self.x - other.x
     local deltaY = self.y - other.y
     return deltaX * deltaX + deltaY * deltaY
 end
 
-function Vector2Mixin:Distance(other)
+function Vector2Proto:Distance(other)
     return math.sqrt(self:DistanceSquared(other))
 end
 
-function Vector2Mixin:Dot(other)
+function Vector2Proto:Dot(other)
     return self.x * other.x + self.y * other.y
 end
 
-function Vector2Mixin:Clone()
+function Vector2Proto:Clone()
     return CreateVector2(self:GetXY())
 end
 
@@ -129,6 +128,6 @@ function Vector2Metatable:__tostring()
     return ("Vector2: %f %f"):format(self.x, self.y)
 end
 
-ZeroVector = CreateVector2(0, 0)
+ZeroVector = CreateVector2()
 RightVector = CreateVector2(1, 0)
 UpVector = CreateVector2(0, 1)
