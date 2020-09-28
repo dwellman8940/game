@@ -126,10 +126,11 @@ end
 function PhysicsShapeMixin:PreprocessVertices()
     self.normals = {}
     self.axes = {}
-    self.bounds = CreateAABB()
+    self.bounds = Polygon.CalculateBounds(self.vertices)
+    self.verticesCenter = self.bounds:GetCenter()
+
     for vertexIndex, vertex in ipairs(self.vertices) do
         local nextVertex = self.vertices[Math.WrapIndex(vertexIndex + 1, #self.vertices)]
-        self.bounds:InlineExpandToContainPoint(vertex)
         local line = vertex - nextVertex
         local normal = line:GetNormal():ToPerpendicular()
         table.insert(self.normals, normal)
@@ -137,7 +138,6 @@ function PhysicsShapeMixin:PreprocessVertices()
             table.insert(self.axes, normal)
         end
     end
-    self.verticesCenter = self.bounds:GetCenter()
 end
 
 local function IsAxis(axes, normal)

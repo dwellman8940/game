@@ -261,6 +261,32 @@ function Polygon.TranslatePolygon(polygon, translation)
     return translated
 end
 
+function Polygon.CalculateBounds(polygon)
+    local aabb
+    for i, vertex in ipairs(polygon) do
+        if aabb then
+            aabb:InlineExpandToContainPoint(vertex)
+        else
+            aabb = CreateAABB(vertex:Clone(), vertex:Clone())
+        end
+    end
+    return aabb
+end
+
+function Polygon.CalculateBoundsFromMultiple(polygons)
+    local aabb
+    for i, polygon in ipairs(polygons) do
+        for j, vertex in ipairs(polygon) do
+            if aabb then
+                aabb:InlineExpandToContainPoint(vertex)
+            else
+                aabb = CreateAABB(vertex:Clone(), vertex:Clone())
+            end
+        end
+    end
+    return aabb
+end
+
 local function CreateClipData(x, y)
     local clip = {
         x = x,

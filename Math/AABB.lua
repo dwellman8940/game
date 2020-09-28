@@ -87,5 +87,5 @@ function AABBProto:Clone()
 end
 
 function AABBMetatable:__tostring()
-    return ("AABB: %s %s"):format(self.minPoint, self.maxPoint)
+    return ("AABB: %s %s"):format(tostring(self.minPoint), tostring(self.maxPoint))
 end

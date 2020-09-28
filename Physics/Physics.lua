@@ -10,13 +10,14 @@ local DebugView_DynamicCollisions = DebugViews.RegisterView("Physics", "Dynamic 
 
 local PhysicsMixin = {}
 
-function CreatePhysicsSystem()
+function CreatePhysicsSystem(owner)
     local physicsSystem = CreateFromMixins(PhysicsMixin)
-    physicsSystem:Initialize()
+    physicsSystem:Initialize(owner)
     return physicsSystem
 end
 
-function PhysicsMixin:Initialize()
+function PhysicsMixin:Initialize(owner)
+    self.owner = owner
     self.staticShapeAabbTree = CreateAABBTree()
     self.staticShapes = {}
     self.dynamicShapes = {}
@@ -64,7 +65,9 @@ end
 
 function PhysicsMixin:Render(delta)
     if DebugView_StaticGeometry:IsViewEnabled() or DebugView_StaticAABB:IsViewEnabled() then
-        for i, physicsShape in ipairs(self.staticShapes) do
+        local renderBounds = self.owner:GetRenderFrameWorldBounds()
+        local overlaps = self.staticShapeAabbTree:GetOverlaps(renderBounds)
+        for i, physicsShape in ipairs(overlaps) do
             physicsShape:RenderDebug(delta, DebugView_StaticGeometry:IsViewEnabled(), DebugView_StaticAABB:IsViewEnabled())
         end
     end

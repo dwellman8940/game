@@ -58,7 +58,7 @@ function ClientMixin:ResetGame()
 
 
     self.entityGraph = CreateEntityGraph()
-    self.physicsSystem = CreatePhysicsSystem()
+    self.physicsSystem = CreatePhysicsSystem(self)
 
     self.remotePlayers = {}
 
@@ -169,6 +169,15 @@ function ClientMixin:GetWorldFrameOffset()
     return CreateVector2(worldOffsetX, worldOffsetY)
 end
 
+function ClientMixin:GetRenderFrameWorldBounds()
+    local rootFrame = self:GetRootFrame()
+    local halfWidth = (rootFrame:GetWidth() + 2) * .5
+    local halfHeight = (rootFrame:GetHeight() + 2) * .5
+    local worldFrameOffset = self:GetWorldFrameOffset()
+
+    return CreateAABB(CreateVector2(-halfWidth, -halfHeight) - worldFrameOffset, CreateVector2(halfWidth, halfHeight) - worldFrameOffset)
+end
+
 function ClientMixin:GetRenderFrameWorldBoundVertices()
     local rootFrame = self:GetRootFrame()
     local halfWidth = (rootFrame:GetWidth() + 2) * .5
@@ -267,7 +276,7 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID)
         --local geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, testCollision)
         --self.localPlayer:AddOcclusionGeometry(geometryComponent)
 
-        for i = 1, 20 do
+        for i = 1, 40 do
             local testCollision2 = self:CreateEntity(GameEntityMixin, nil, CreateVector2((i - 1) * 205 - 500, 0))
             local geometryComponent2 = CreateGameEntityComponent(GeometryComponentMixin, testCollision2, vertices)
             self.localPlayer:AddOcclusionGeometry(geometryComponent2)

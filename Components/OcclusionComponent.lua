@@ -81,47 +81,53 @@ end
 function OcclusionComponentMixin:Render(delta) -- override
     self:ReleaseAllTextures()
 
-    local worldBoundVertices = self:GetClient():GetRenderFrameWorldBoundVertices()
+    local renderWorldBoundVertices = self:GetClient():GetRenderFrameWorldBoundVertices()
+    local renderWorldBounds = self:GetClient():GetRenderFrameWorldBounds()
+
+    -- TODO: BVH for static occlusion geometry?
 
     local rayOrigin = self:GetWorldLocation()
     for componentIndex, geometryComponent in ipairs(self.geometryComponents) do
-        local geometryComponentLocation = geometryComponent:GetWorldLocation()
-        local vertexOrigin = geometryComponentLocation - rayOrigin
+        local geometryBounds = geometryComponent:GetWorldBounds()
+        if geometryBounds:Overlaps(renderWorldBounds) then
+            local geometryComponentLocation = geometryComponent:GetWorldLocation()
+            local vertexOrigin = geometryComponentLocation - rayOrigin
 
-        local convexVertexList = geometryComponent:GetConvexVertexList()
-        for listIndex, vertices in ipairs(convexVertexList) do
-            local clippedVertices = Polygon.ClipPolygon(vertices, Polygon.TranslatePolygon(worldBoundVertices, -geometryComponentLocation))
-            local leftVertIndex, rightVertIndex
-            local leftRay, rightRay
+            local convexVertexList = geometryComponent:GetConvexVertexList()
+            for listIndex, vertices in ipairs(convexVertexList) do
+                local clippedVertices = Polygon.ClipPolygon(vertices, Polygon.TranslatePolygon(renderWorldBoundVertices, -geometryComponentLocation))
+                local leftVertIndex, rightVertIndex
+                local leftRay, rightRay
 
-            for vertIndex, vertex in ipairs(clippedVertices) do
-                local towards = vertexOrigin + vertex
+                for vertIndex, vertex in ipairs(clippedVertices) do
+                    local towards = vertexOrigin + vertex
 
-                if not leftVertIndex then
-                    leftVertIndex = vertIndex
-                    rightVertIndex = vertIndex
-
-                    leftRay = towards
-                    rightRay = towards
-                else
-                    if towards:IsLeftOf(leftRay) then
+                    if not leftVertIndex then
                         leftVertIndex = vertIndex
-                        leftRay = towards
-                    end
-
-                    if not towards:IsLeftOf(rightRay) then
                         rightVertIndex = vertIndex
+
+                        leftRay = towards
                         rightRay = towards
+                    else
+                        if towards:IsLeftOf(leftRay) then
+                            leftVertIndex = vertIndex
+                            leftRay = towards
+                        end
+
+                        if not towards:IsLeftOf(rightRay) then
+                            rightVertIndex = vertIndex
+                            rightRay = towards
+                        end
                     end
                 end
-            end
 
-            if leftVertIndex then
-                self:DrawShadowPolygon(CreateConnectingVertices(rightVertIndex, leftVertIndex, clippedVertices, geometryComponentLocation, rayOrigin, worldBoundVertices))
+                if leftVertIndex then
+                    self:DrawShadowPolygon(CreateConnectingVertices(rightVertIndex, leftVertIndex, clippedVertices, geometryComponentLocation, rayOrigin, renderWorldBoundVertices))
 
-                if DebugView_ShadowRays:IsViewEnabled() then
-                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[leftVertIndex] - rayOrigin):GetNormal() * 1000, nil, Colors.Periwinkle, Colors.Periwinkle)
-                    Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[rightVertIndex] - rayOrigin):GetNormal() * 1000, nil, Colors.Black, Colors.Black)
+                    if DebugView_ShadowRays:IsViewEnabled() then
+                        Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[leftVertIndex] - rayOrigin):GetNormal() * 1000, nil, Colors.Periwinkle, Colors.Periwinkle)
+                        Debug.DrawDebugLine(rayOrigin, rayOrigin + (geometryComponentLocation + clippedVertices[rightVertIndex] - rayOrigin):GetNormal() * 1000, nil, Colors.Black, Colors.Black)
+                    end
                 end
             end
         end

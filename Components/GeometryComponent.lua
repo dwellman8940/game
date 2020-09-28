@@ -15,6 +15,8 @@ function GeometryComponentMixin:Initialize(owningEntity, vertices, isDynamicShap
     self.convexVertexLists = Polygon.ConcaveDecompose(self.vertices)
     self.isDynamicShape = isDynamicShape
 
+    self.bounds = Polygon.CalculateBoundsFromMultiple(self.convexVertexLists)
+
     if self.isDynamicShape then
         assert(#self.convexVertexLists == 1)
         self.dynamicPhysicsShape = self:GetPhysicsSystem():RegisterDynamicGeometry(self:GetWorldLocation(), self.convexVertexLists[1])
@@ -36,6 +38,14 @@ end
 
 function GeometryComponentMixin:GetName()
     return "GeometryComponent"
+end
+
+function GeometryComponentMixin:GetBounds()
+    return self.bounds
+end
+
+function GeometryComponentMixin:GetWorldBounds()
+    return self.bounds:Translate(self:GetWorldLocation())
 end
 
 function GeometryComponentMixin:GetVertices()

@@ -15,7 +15,7 @@ end
 function ServerMixin:Initialize()
     self.messageQueue = {}
     self.entityGraph = CreateEntityGraph()
-    self.physicsSystem = CreatePhysicsSystem()
+    self.physicsSystem = CreatePhysicsSystem(self)
 
     self.elapsed = 0
     self.lastTickTime = GetTime()
