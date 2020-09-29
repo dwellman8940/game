@@ -45,6 +45,11 @@ function GameEntityComponentMixin:GetRelativeLocation()
     return self.relativeLocation
 end
 
+function GameEntityComponentMixin:GetGameState()
+    -- only non-nil if this is running on a client
+    return self:GetGameEntityOwner():GetGameState()
+end
+
 function GameEntityComponentMixin:GetClient()
     -- only non-nil if this is running on a client
     return self:GetGameEntityOwner():GetClient()
@@ -56,9 +61,9 @@ function GameEntityComponentMixin:GetServer()
 end
 
 function GameEntityComponentMixin:GetPhysicsSystem()
-    local client = self:GetClient()
-    if client then
-        return client:GetPhysicsSystem()
+    local clientGameState = self:GetGameState()
+    if clientGameState then
+        return clientGameState:GetPhysicsSystem()
     end
     local server = self:GetServer()
     if server then

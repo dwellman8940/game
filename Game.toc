@@ -15,12 +15,20 @@ Util/Polygon.lua
 Math/Vector.lua
 Math/AABB.lua
 
+UI/Button.lua
+
 Physics/AABBTree.lua
 Physics/PhysicsShape.lua
 Physics/Physics.lua
 
 Networking/Messages.lua
 Networking/Networking.lua
+
+GameStates/BaseState.lua
+GameStates/EditorState.lua
+GameStates/LobbyState.lua
+GameStates/PlayingState.lua
+GameStates/MainMenuState.lua
 
 Level/Level.lua
 Assets/Levels/Test.lua

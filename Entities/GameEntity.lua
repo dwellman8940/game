@@ -14,8 +14,8 @@ function GameEntityMixin:InitializeOnServer(server, parentEntity, relativeLocati
     self:Initialize(parentEntity, relativeLocation)
 end
 
-function GameEntityMixin:InitializeOnClient(client, parentEntity, relativeLocation)
-    self.client = client
+function GameEntityMixin:InitializeOnClient(gameState, parentEntity, relativeLocation)
+    self.gameState = gameState
     self:Initialize(parentEntity, relativeLocation)
 end
 
@@ -84,9 +84,14 @@ function GameEntityMixin:GetAllComponents()
     return self.components
 end
 
+function GameEntityMixin:GetGameState()
+    -- only non-nil if this is running on a client
+    return self.gameState
+end
+
 function GameEntityMixin:GetClient()
     -- only non-nil if this is running on a client
-    return self.client
+    return self.gameState and self.gameState:GetClient() or nil
 end
 
 function GameEntityMixin:GetServer()

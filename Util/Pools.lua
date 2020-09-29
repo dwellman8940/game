@@ -63,6 +63,8 @@ function Pools.Initialize(worldFrame, renderFrame)
         texture:ClearAllPoints()
         texture:SetSnapToPixelGrid(false)
         texture:SetTexelSnappingBias(0)
+        texture:SetHorizTile(false)
+        texture:SetVertTile(false)
         for vertexIndex = 1, 4 do
             texture:SetVertexOffset(vertexIndex, 0, 0)
         end

@@ -171,13 +171,13 @@ DebugViewPane:SetFrameStrata("HIGH")
 
 do
     local Background = DebugViewPane:CreateTexture(nil, "BACKGROUND", nil, -7)
-    Background:SetColorTexture(0, .1, .1, 1)
+    Background:SetColorTexture(Colors.Swamp:GetRGBA())
     Background:SetAllPoints(DebugViewPane)
 end
 
 do
     local Border = DebugViewPane:CreateTexture(nil, "BACKGROUND", nil, -8)
-    Border:SetColorTexture(0, 0, 0, 1)
+    Border:SetColorTexture(Colors.Black:GetRGBA())
     local BORDER_SIZE = 2
     Border:SetPoint("TOPLEFT", -BORDER_SIZE, BORDER_SIZE)
     Border:SetPoint("BOTTOMRIGHT", BORDER_SIZE, -BORDER_SIZE)

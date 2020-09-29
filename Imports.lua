@@ -66,8 +66,11 @@ EventFrame:SetScript("OnEvent", function(self, event, ...)
         local loadedAddon = ...
         if loadedAddon == addonName then
             local Game_DebugViews = Allow("Game_DebugViews")
-
             DebugViews.OnSettingsLoaded(Game_DebugViews)
+
+            local Game_Levels = Allow("Game_Levels")
+            Level.RegisterLevelData("SavedData", Game_Levels)
+
             self:UnregisterEvent("ADDON_LOADED")
         end
     end

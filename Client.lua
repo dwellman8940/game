@@ -30,7 +30,6 @@ Background:Show()
 Pools.Initialize(WorldFrame, RenderFrame)
 
 local ClientMixin = {}
-local ClientMessageHandlers = {}
 
 function CreateClient()
     local client = CreateFromMixins(ClientMixin)
@@ -40,63 +39,23 @@ function CreateClient()
 end
 
 function ClientMixin:Initialize()
-    self.messageQueue = {}
-    self:ResetGame()
-
+    self.elapsed = 0
+    self.lastTickTime = GetTime()
     C_Timer.NewTicker(0, function() self:TryTick() end)
 end
 
-function ClientMixin:ResetGame()
-    local entityGraph = self:GetEntityGraph()
-    if entityGraph then
-        for i, entity in entityGraph:EnumerateAll() do
-            entity:DestroyInternal()
-        end
+function ClientMixin:SwitchToGameState(gameState)
+    local newGameState = CreateFromMixins(gameState)
+    if self.gameState then
+        self.gameState:End(newGameState)
     end
-    self.localPlayer = nil
-    ClientFrame:EnableKeyboard(false)
+    self.gameState = newGameState
 
+    self.gameState:BeginInternal(self)
 
-    self.entityGraph = CreateEntityGraph()
-    self.physicsSystem = CreatePhysicsSystem(self)
+    self:UnbindKeyboard()
 
-    self.remotePlayers = {}
-
-    self.elapsed = 0
-    self.lastTickTime = GetTime()
-end
-
-function ClientMixin:LoadLevel(levelName)
-    Level.Load(self, levelName)
-    self:GetPhysicsSystem():FinalizeStaticShapes()
-end
-
-function ClientMixin:CreateNetworkConnection(lobbyCode, localServer)
-    local localServerOnMessageReceived = localServer and function(messageName, ...) localServer:AddMessageToQueue(messageName, ...) end or nil
-
-    local function OnMessageReceived(messageName, ...)
-        self:AddMessageToQueue(messageName, ...)
-    end
-
-    local onServerMessageReceived = OnMessageReceived
-    self.clientNetworkConnection = CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onServerMessageReceived)
-
-    local onPeerMessageReceived = OnMessageReceived
-    self.peerNetworkConnection = CreatePeerConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onPeerMessageReceived)
-end
-
-function ClientMixin:AddMessageToQueue(messageName, ...)
-    table.insert(self.messageQueue, { messageName, ... })
-end
-
-function ClientMixin:ProcessMessages()
-    if #self.messageQueue > 0 then
-        for i, messageData in ipairs(self.messageQueue) do
-            local messageName = messageData[1]
-            ClientMessageHandlers[messageName](self, unpack(messageData, 2))
-        end
-        self.messageQueue = {}
-    end
+    return newGameState
 end
 
 local TARGET_FPS = 60
@@ -109,47 +68,29 @@ function ClientMixin:TryTick()
 
         while self.elapsed >= SECONDS_PER_TICK do
             self.elapsed = self.elapsed - SECONDS_PER_TICK
-            self.physicsSystem:Tick(SECONDS_PER_TICK)
             self:Tick(SECONDS_PER_TICK)
         end
     end
 
-    self.physicsSystem:Render(delta)
     self:Render(delta)
 
     self.lastTickTime = now
 end
 
 function ClientMixin:Render(delta)
-    local entityGraph = self:GetEntityGraph()
-    for i, entity in entityGraph:EnumerateAll() do
-        entity:RenderInternal(delta)
-    end
+    self.gameState:Render(delta)
 end
 
 function ClientMixin:Tick(delta)
-    self:ProcessMessages()
-
-    local entityGraph = self:GetEntityGraph()
-    for i, entity in entityGraph:EnumerateAll() do
-        entity:TickClientInternal(delta)
-    end
+    self.gameState:Tick(delta)
 end
 
 function ClientMixin:GetRootFrame()
     return RenderFrame
 end
 
-function ClientMixin:GetEntityGraph()
-    return self.entityGraph
-end
-
-function ClientMixin:SendMessage(messageName, ...)
-    self.clientNetworkConnection:SendMessageToServer(messageName, ...)
-end
-
-function ClientMixin:SendMessageToPeers(messageName, ...)
-    self.peerNetworkConnection:SendMessageToPeers(messageName, ...)
+function ClientMixin:GetWorldFrame()
+    return WorldFrame
 end
 
 function ClientMixin:GetCursorLocation()
@@ -197,32 +138,19 @@ function ClientMixin:GetRenderFrameWorldBoundVertices()
     }
 end
 
-function ClientMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
-    local gameEntity = CreateFromMixins(entityMixin)
-    gameEntity:InitializeOnClient(self, parentEntity, relativeLocation)
-    if not parentEntity then
-        self:GetEntityGraph():AddToRoot(gameEntity)
-    end
-    return gameEntity
-end
-
-function ClientMixin:BeginGame()
-
-end
-
-function ClientMixin:BindKeyboardToPlayer()
+function ClientMixin:BindKeyboardToPlayer(localPlayer)
     ClientFrame:EnableKeyboard(true)
 
     local function OnKeyDown(f, key)
         ClientFrame:SetPropagateKeyboardInput(false)
         if key == "A" then
-            self.localPlayer:SetMovingLeft(true)
+            localPlayer:SetMovingLeft(true)
         elseif key == "D" then
-            self.localPlayer:SetMovingRight(true)
+            localPlayer:SetMovingRight(true)
         elseif key == "W" then
-            self.localPlayer:SetMovingForward(true)
+            localPlayer:SetMovingForward(true)
         elseif key == "S" then
-            self.localPlayer:SetMovingBackward(true)
+            localPlayer:SetMovingBackward(true)
         else
             ClientFrame:SetPropagateKeyboardInput(true)
         end
@@ -231,13 +159,13 @@ function ClientMixin:BindKeyboardToPlayer()
     local function OnKeyUp(f, key)
         ClientFrame:SetPropagateKeyboardInput(false)
         if key == "A" then
-            self.localPlayer:SetMovingLeft(false)
+            localPlayer:SetMovingLeft(false)
         elseif key == "D" then
-            self.localPlayer:SetMovingRight(false)
+            localPlayer:SetMovingRight(false)
         elseif key == "W" then
-            self.localPlayer:SetMovingForward(false)
+            localPlayer:SetMovingForward(false)
         elseif key == "S" then
-            self.localPlayer:SetMovingBackward(false)
+            localPlayer:SetMovingBackward(false)
         else
             ClientFrame:SetPropagateKeyboardInput(false)
         end
@@ -247,40 +175,9 @@ function ClientMixin:BindKeyboardToPlayer()
     ClientFrame:SetScript("OnKeyUp", OnKeyUp)
 end
 
-function ClientMixin:GetPhysicsSystem()
-    return self.physicsSystem
-end
+function ClientMixin:UnbindKeyboard()
+    ClientFrame:EnableKeyboard(false)
 
--- Message Handlers --
-function ClientMessageHandlers:ResetGame()
-    self:ResetGame()
-end
-
-function ClientMessageHandlers:LoadLevel(levelName)
-    self:LoadLevel(levelName)
-end
-
-function ClientMessageHandlers:InitPlayer(playerName, playerID)
-    if playerName == UnitName("player") then
-        self.localPlayer = self:CreateEntity(PlayerEntityMixin)
-        self.localPlayer:SetPlayerID(playerID)
-        self.localPlayer:MarkAsLocalPlayer(WorldFrame)
-        self:BindKeyboardToPlayer(self.localPlayer)
-    else
-        local remotePlayer = self:CreateEntity(PlayerEntityMixin)
-        remotePlayer:SetPlayerID(playerID)
-
-        self.remotePlayers[playerID] = remotePlayer
-    end
-end
-
-function ClientMessageHandlers:OnMovement(playerID, location, velocity)
-    local remotePlayer = self.remotePlayers[playerID]
-    if remotePlayer then
-        remotePlayer:ApplyRemoveMovement(location, velocity)
-    end
-end
-
-function ClientMessageHandlers:Debug_ReplicateAABB(aabb)
-    Debug.DrawDebugAABB(ZeroVector, aabb)
+    ClientFrame:SetScript("OnKeyDown", nil)
+    ClientFrame:SetScript("OnKeyUp", nil)
 end

@@ -49,4 +49,5 @@ Colors = {
     BayLeaf = CreateColor(.5, .7, .5, 1),
     Bouquet = CreateColor(.7, .5, .7, 1),
     Goblin = CreateColor(.2, .5, .2, 1),
+    Swamp = CreateColor(0, .1, .1, 1),
 }
