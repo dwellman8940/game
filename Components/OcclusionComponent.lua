@@ -11,11 +11,21 @@ OcclusionComponentMixin = CreateFromMixins(GameEntityComponentMixin)
 
 function OcclusionComponentMixin:Initialize(owningEntity) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)
+
+    self.occlusionEnabled = true
 end
 
 function OcclusionComponentMixin:Destroy() -- override
     self:ReleaseAllTextures()
     GameEntityComponentMixin.Destroy(self)
+end
+
+function OcclusionComponentMixin:SetOcclusionEnabled(occlusionEnabled)
+    self.occlusionEnabled = occlusionEnabled
+end
+
+function OcclusionComponentMixin:IsOcclusionEnabled()
+    return self.occlusionEnabled
 end
 
 function OcclusionComponentMixin:ReleaseAllTextures()
@@ -80,7 +90,7 @@ function OcclusionComponentMixin:Render(delta) -- override
 
     self:ReleaseAllTextures()
 
-    if not DebugView_EnabledOcclusion:IsViewEnabled() then
+    if not DebugView_EnabledOcclusion:IsViewEnabled() or not self:IsOcclusionEnabled() then
         DebugView_Time:EndProfileCapture()
         return
     end

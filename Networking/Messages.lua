@@ -124,11 +124,11 @@ local function DecodeFloat(float)
 end
 
 function EncodeLobbyCode(lobbyCode)
-    return lobbyCode
+    return EncodeEntireString(lobbyCode)
 end
 
 function DecodeLobbyCode(messageData)
-    return messageData
+    return DecodeEntireString(messageData)
 end
 
 local function InvertIndexedTable(t)
@@ -142,6 +142,7 @@ end
 TARGET_CODE_ALL_CLIENTS = "A"
 TARGET_CODE_SERVER_AND_PEERS = "P"
 TARGET_CODE_SERVER = "S"
+TARGET_CODE_LOBBY = "L"
 
 local function CreateSerializeClosure(messageName, serializeFn)
     return function(...)
@@ -192,13 +193,56 @@ do
     end
 end
 
-AddMessage("ResetGame", nil, nil, TARGET_CODE_ALL_CLIENTS)
+AddMessage(
+    "BroadcastLobby",
+
+    function(lobbyCode, hostPlayer, numPlayers, maxPlayers)
+        return ("%s %s %s %s"):format(lobbyCode, hostPlayer, tostring(numPlayers), tostring(maxPlayers))
+    end,
+
+    function(messageData)
+        local lobbyCode, hostPlayer, numPlayers, maxPlayers = messageData:match("^(%S+) (%S+) (%S+) (%S+)$")
+        return lobbyCode, hostPlayer, tonumber(numPlayers), tonumber(maxPlayers)
+    end,
+
+    TARGET_CODE_LOBBY
+)
+
+AddMessage(
+    "JoinLobby",
+
+    function(lobbyCode)
+        return lobbyCode
+    end,
+
+    function(messageData)
+        local lobbyCode = messageData
+        return lobbyCode
+    end,
+
+    TARGET_CODE_LOBBY
+)
+
+AddMessage(
+    "JoinLobbyResponse",
+
+    function(lobbyCode, targetPlayer, response)
+        return ("%s %s %s"):format(lobbyCode, targetPlayer, tostring(response))
+    end,
+
+    function(messageData)
+         local lobbyCode, targetPlayer, response = messageData:match("^(%S+) (%S+) (%S+)$")
+        return lobbyCode, targetPlayer, tonumber(response)
+    end,
+
+    TARGET_CODE_LOBBY
+)
 
 AddMessage(
     "LoadLevel",
 
     function(levelName)
-        return EncodeEntireString(levelName)
+        return levelName
     end,
 
     function(messageData)
@@ -213,7 +257,7 @@ AddMessage(
     "InitPlayer",
 
     function(playerName, playerID)
-        return EncodeByte(playerID) .. EncodeEntireString(playerName)
+        return EncodeByte(playerID) .. playerName
     end,
 
     function(messageData)

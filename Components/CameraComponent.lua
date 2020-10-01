@@ -21,6 +21,8 @@ function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     self.fogTexture:AddMaskTexture(self.maskTexture)
     self.fogTexture:Show()
 
+    self.fogEnabled = true
+
     self.worldFrame = worldFrame
 end
 
@@ -34,6 +36,14 @@ function CameraComponentMixin:Destroy() -- override
     GameEntityComponentMixin.Destroy(self)
 end
 
+function CameraComponentMixin:SetFogEnabled(fogEnabled)
+    self.fogEnabled = fogEnabled
+end
+
+function CameraComponentMixin:IsFogEnabled(fogEnabled)
+    return self.fogEnabled
+end
+
 function CameraComponentMixin:SetWorldOffset(offset)
     Rendering.DrawAtWorldPoint(self.worldFrame, -offset, "CENTER")
 end
@@ -44,7 +54,7 @@ function CameraComponentMixin:Render(delta) -- override
     self.targetWorldOffset = Math.LerpOverTime(self.targetWorldOffset or self:GetWorldLocation(), self:GetWorldLocation(), .08, delta)
     self:SetWorldOffset(self.targetWorldOffset)
 
-    self.fogTexture:SetShown(DebugView_EnableFog:IsViewEnabled())
+    self.fogTexture:SetShown(self.fogEnabled and DebugView_EnableFog:IsViewEnabled())
 end
 
 function CameraComponentMixin:SetSize(width, height)

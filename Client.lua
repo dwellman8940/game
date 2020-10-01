@@ -1,10 +1,11 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-local ClientFrame = CreateFrame("Frame")
+local ClientFrame = CreateFrame("Frame", nil, GameFrame)
 ClientFrame:SetWidth(800)
 ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
+ClientFrame:SetScale(1.7)
 
 local DebugView_ClientClips = DebugViews.RegisterView("Client", "Clip", true)
 
@@ -41,7 +42,18 @@ end
 function ClientMixin:Initialize()
     self.elapsed = 0
     self.lastTickTime = GetTime()
-    C_Timer.NewTicker(0, function() self:TryTick() end)
+
+    local ticker
+    ClientFrame:SetScript("OnShow", function()
+        ticker = C_Timer.NewTicker(0, function() self:TryTick() end)
+    end)
+
+    ClientFrame:SetScript("OnHide", function()
+        if ticker then
+            ticker = ticker:Cancel()
+            self:SwitchToGameState(MainMenuStateMixin)
+        end
+    end)
 end
 
 function ClientMixin:SwitchToGameState(gameState)

@@ -16,27 +16,43 @@ function ServerMixin:Initialize()
     self.messageQueue = {}
     self.entityGraph = CreateEntityGraph()
     self.physicsSystem = CreatePhysicsSystem(self)
+    self.nextPlayerID = 1
 
     self.elapsed = 0
     self.lastTickTime = GetTime()
-    C_Timer.NewTicker(0, function() self:TryTick() end)
+    self.ticker = C_Timer.NewTicker(0, function() self:TryTick() end)
 end
 
-function ServerMixin:BeginGame(playersInLobbby)
-    self:SendMessageToAllClients("ResetGame")
+function ServerMixin:Destroy()
+    self.ticker:Cancel()
+    self.serverNetworkConnection:Disconnect()
+end
 
-    local levelToLoad = "Test"
+function ServerMixin:BeginGame(levelToLoad, playersInLobbby)
     self:SendMessageToAllClients("LoadLevel", levelToLoad)
 
     self:LoadLevel(levelToLoad)
 
     self.players = {}
 
-    for i, playerName in ipairs(playersInLobbby) do
-        local player = self:CreateEntity(PlayerEntityMixin)
-        player:SetPlayerID(i)
-        self.players[i] = player
-        self:SendMessageToAllClients("InitPlayer", playerName, i)
+    if playersInLobbby then
+        for i, playerName in ipairs(playersInLobbby) do
+            self:AddPlayer(playerName)
+        end
+    end
+end
+
+function ServerMixin:AddPlayer(playerName)
+    local player = self:CreateEntity(PlayerEntityMixin)
+
+    local playerID = self.nextPlayerID
+    player:SetPlayerID(playerID)
+    self.players[playerID] = player
+    self:SendMessageToAllClients("InitPlayer", playerName, playerID)
+
+    self.nextPlayerID = self.nextPlayerID + 1
+    if self.nextPlayerID > 255 then
+        self.nextPlayerID = 1
     end
 end
 

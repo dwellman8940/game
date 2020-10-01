@@ -68,6 +68,14 @@ function PlayerEntityMixin:SetMovingBackward(isMovingBackward)
     self.isMovingBackward = isMovingBackward
 end
 
+function PlayerEntityMixin:SetIsLobby(isLobby)
+    self.isLobby = isLobby
+end
+
+function PlayerEntityMixin:IsLobby(isLobby)
+    return self.isLobby
+end
+
 function PlayerEntityMixin:SetPlayerID(playerID)
     self.playerID = playerID
 end
@@ -79,7 +87,9 @@ end
 function PlayerEntityMixin:MarkAsLocalPlayer(worldFrame)
     self.isLocalPlayer = true
     self.cameraComponent = CreateGameEntityComponent(CameraComponentMixin, self, worldFrame)
+    self.cameraComponent:SetFogEnabled(not self:IsLobby())
     self.occlusionComponent = CreateGameEntityComponent(OcclusionComponentMixin, self, worldFrame)
+    self.occlusionComponent:SetOcclusionEnabled(not self:IsLobby())
 end
 
 function PlayerEntityMixin:IsLocalPlayer()

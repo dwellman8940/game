@@ -5,15 +5,39 @@ Button = {}
 
 do
     local function OnMouseDown(self)
-        self.LeftTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Down]])
-        self.RightTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Down]])
-        self.CenterTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Down]])
+        if self:IsEnabled() then
+            self.LeftTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Down]])
+            self.RightTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Down]])
+            self.CenterTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Down]])
+        end
     end
 
     local function OnMouseUp(self)
+        if self:IsEnabled() then
+            self.LeftTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Up]])
+            self.RightTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Up]])
+            self.CenterTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Up]])
+        end
+    end
+
+    local function OnEnabled(self)
         self.LeftTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Up]])
         self.RightTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Up]])
         self.CenterTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Up]])
+    end
+
+    local function OnDisable(self)
+        self.LeftTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Disabled]])
+        self.RightTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Disabled]])
+        self.CenterTexture:SetTexture([[Interface\Buttons\UI-Panel-Button-Disabled]])
+    end
+
+    local function OnShow(self)
+        if self:IsEnabled() then
+            OnEnabled(self)
+        else
+            OnDisable(self)
+        end
     end
 
     function Button.CreateStandardButton(parent)
@@ -23,12 +47,16 @@ do
 
         StandardButton:SetScript("OnMouseDown", OnMouseDown)
         StandardButton:SetScript("OnMouseUp", OnMouseUp)
+        StandardButton:SetScript("OnEnable", OnEnabled)
+        StandardButton:SetScript("OnDisable", OnDisable)
+        StandardButton:SetScript("OnShow", OnShow)
 
         StandardButton:SetHighlightTexture([[Interface\Buttons\UI-Panel-Button-Highlight]], "ADD")
         StandardButton:GetHighlightTexture():SetTexCoord(0, 0.625, 0, 0.6875)
 
         StandardButton:SetNormalFontObject("GameFontNormal")
         StandardButton:SetHighlightFontObject("GameFontHighlight")
+        StandardButton:SetDisabledFontObject("GameFontDisable")
 
         local LeftTexture = StandardButton:CreateTexture(nil, "BACKGROUND")
         StandardButton.LeftTexture = LeftTexture
@@ -63,6 +91,7 @@ do
         LargeButton:SetWidth(250)
         LargeButton:SetNormalFontObject("GameFontNormalHuge")
         LargeButton:SetHighlightFontObject("GameFontHighlightHuge")
+        LargeButton:SetDisabledFontObject("GameFontDisableHuge")
 
         return LargeButton
     end

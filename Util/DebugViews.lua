@@ -156,12 +156,6 @@ function DebugViews.OnSettingsLoaded(settings)
     end
 end
 
-function DebugViews.SetServerFPS(fps)
-end
-
-function DebugViews.SetClientFPS(fps)
-end
-
 local DebugViewPane = CreateFrame("Frame", nil, UIParent)
 DebugViewPane:SetWidth(250)
 DebugViewPane:SetHeight(700)

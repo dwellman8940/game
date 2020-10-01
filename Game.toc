@@ -12,6 +12,9 @@ Util/Pools.lua
 Util/Rendering.lua
 Util/Polygon.lua
 
+Localization/Localization.lua
+Localization/enUS.lua
+
 Math/Vector.lua
 Math/AABB.lua
 
@@ -32,6 +35,7 @@ GameStates/MainMenuState.lua
 
 Level/Level.lua
 Assets/Levels/Test.lua
+Assets/Levels/Lobby.lua
 
 Components/GameEntityComponent.lua
 

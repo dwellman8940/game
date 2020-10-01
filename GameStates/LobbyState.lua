@@ -3,7 +3,9 @@ setfenv(1, envTable)
 
 LobbyStateMixin = CreateFromMixins(GameStateMixin)
 
-local ClientMessageHandlers = {}
+local TIME_BETWEEN_LOBBY_PINGS = 10
+
+local LobbyMessageHandlers = {}
 
 function LobbyStateMixin:Begin()
     self.messageQueue = {}
@@ -23,26 +25,40 @@ function LobbyStateMixin:End()
             entity:DestroyInternal()
         end
     end
+    self.server:Disconnect()
+    self.clientNetworkConnection:Disconnect()
+    self.peerNetworkConnection:Disconnect()
+    self.lobbyNetworkConnection:Disconnect()
 end
 
-function LobbyStateMixin:HostGame(lobbyCode)
+local function GenerateLobbyCode()
+    -- 8 values should be plenty unique enough to avoid collisions in the same group/raid
+    return UnitGUID("player"):sub(-8)
+end
+
+function LobbyStateMixin:IsHost()
+    return self.nextLobbyPing ~= nil
+end
+
+function LobbyStateMixin:HostLobby()
     self.server = CreateServer()
+    self.lobbyCode = GenerateLobbyCode()
 
-    self:CreateNetworkConnection(lobbyCode, self.server)
-    self.server:CreateNetworkConnection(lobbyCode, self)
+    self:CreateNetworkConnection(self.lobbyCode, self.server)
+    self.server:CreateNetworkConnection(self.lobbyCode, self)
 
-    -- todo: real lobby
-    local playersInLobby = {
-        "Ladreiline",
-        "Cereekeloran",
-        --"Dorbland"
+    self.server:BeginGame("Lobby", { UnitName("player") })
+
+    self.nextLobbyPing = 0
+
+    -- TODO: Better lobby settings
+    self.lobbySettings = {
+        MaxPlayers = 10,
     }
-
-    self.server:BeginGame(playersInLobby)
 end
 
 function LobbyStateMixin:JoinGame(lobbyCode)
-    self:CreateNetworkConnection(lobbyCode, self.server)
+    self:CreateNetworkConnection(lobbyCode)
 end
 
 function LobbyStateMixin:LoadLevel(levelName)
@@ -62,6 +78,8 @@ function LobbyStateMixin:CreateNetworkConnection(lobbyCode, localServer)
 
     local onPeerMessageReceived = OnMessageReceived
     self.peerNetworkConnection = CreatePeerConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, onPeerMessageReceived)
+
+    self.lobbyNetworkConnection = CreateLobbyConnection(UnitName("player"), OnMessageReceived)
 end
 
 function LobbyStateMixin:AddMessageToQueue(messageName, ...)
@@ -72,7 +90,7 @@ function LobbyStateMixin:ProcessMessages()
     if #self.messageQueue > 0 then
         for i, messageData in ipairs(self.messageQueue) do
             local messageName = messageData[1]
-            ClientMessageHandlers[messageName](self, unpack(messageData, 2))
+            LobbyMessageHandlers[messageName](self, unpack(messageData, 2))
         end
         self.messageQueue = {}
     end
@@ -93,6 +111,7 @@ end
 
 function LobbyStateMixin:Tick(delta)
     self:ProcessMessages()
+    self:CheckLobbyPing()
 
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
@@ -100,6 +119,33 @@ function LobbyStateMixin:Tick(delta)
     end
 
     self.physicsSystem:Tick(delta)
+end
+
+function LobbyStateMixin:CheckLobbyPing()
+    if self:IsHost() then
+        local now = GetTime()
+        if now >= self.nextLobbyPing or self.queuedLobbyPing then
+            self.queuedLobbyPing = nil
+            self:BroadcastLobbyState()
+            self.nextLobbyPing = now +TIME_BETWEEN_LOBBY_PINGS
+        end
+    end
+end
+
+function LobbyStateMixin:QueueUpLobbyPing()
+    self.queuedLobbyPing = true
+end
+
+function LobbyStateMixin:GetNumPlayersConnected()
+    local playerCount = 1
+    for playerID in pairs(self.remotePlayers) do
+        playerCount = playerCount + 1
+    end
+    return playerCount
+end
+
+function LobbyStateMixin:BroadcastLobbyState()
+    self.lobbyNetworkConnection:SendMessageToLobby("BroadcastLobby", self.lobbyCode, UnitName("player"), self:GetNumPlayersConnected(), self.lobbySettings.MaxPlayers)
 end
 
 function LobbyStateMixin:SendMessage(messageName, ...)
@@ -124,35 +170,33 @@ function LobbyStateMixin:CreateEntity(entityMixin, parentEntity, relativeLocatio
 end
 
 -- Message Handlers --
-function ClientMessageHandlers:ResetGame()
-    --self:ResetGame()
-end
-
-function ClientMessageHandlers:LoadLevel(levelName)
+function LobbyMessageHandlers:LoadLevel(levelName)
     self:LoadLevel(levelName)
 end
 
-function ClientMessageHandlers:InitPlayer(playerName, playerID)
+function LobbyMessageHandlers:InitPlayer(playerName, playerID)
     if playerName == UnitName("player") then
         self.localPlayer = self:CreateEntity(PlayerEntityMixin)
+        self.localPlayer:SetIsLobby(true)
         self.localPlayer:SetPlayerID(playerID)
         self.localPlayer:MarkAsLocalPlayer(self:GetClient():GetWorldFrame())
         self:GetClient():BindKeyboardToPlayer(self.localPlayer)
     else
         local remotePlayer = self:CreateEntity(PlayerEntityMixin)
+        remotePlayer:SetIsLobby(true)
         remotePlayer:SetPlayerID(playerID)
 
         self.remotePlayers[playerID] = remotePlayer
     end
 end
 
-function ClientMessageHandlers:OnMovement(playerID, location, velocity)
+function LobbyMessageHandlers:OnMovement(playerID, location, velocity)
     local remotePlayer = self.remotePlayers[playerID]
     if remotePlayer then
         remotePlayer:ApplyRemoveMovement(location, velocity)
     end
 end
 
-function ClientMessageHandlers:Debug_ReplicateAABB(aabb)
+function LobbyMessageHandlers:Debug_ReplicateAABB(aabb)
     Debug.DrawDebugAABB(ZeroVector, aabb)
 end
