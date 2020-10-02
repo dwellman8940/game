@@ -95,4 +95,17 @@ do
 
         return LargeButton
     end
+
+    function Button.CreateCloseButton(parent)
+        local CloseButton = CreateFrame("Button", nil, parent)
+        CloseButton:SetWidth(32)
+        CloseButton:SetHeight(32)
+
+        CloseButton:SetDisabledTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Disabled]])
+        CloseButton:SetNormalTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Up]])
+        CloseButton:SetPushedTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Down]])
+        CloseButton:SetHighlightTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Highlight]], "ADD")
+
+        return CloseButton
+    end
 end

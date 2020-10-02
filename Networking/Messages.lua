@@ -209,7 +209,7 @@ AddMessage(
 )
 
 AddMessage(
-    "JoinLobby",
+    "CloseLobby",
 
     function(lobbyCode)
         return lobbyCode
@@ -224,10 +224,26 @@ AddMessage(
 )
 
 AddMessage(
+    "JoinLobby",
+
+    function(lobbyCode, playerName)
+        return lobbyCode .. playerName
+    end,
+
+    function(messageData)
+        local lobbyCode = messageData:sub(1, 8)
+        local playerName = messageData:sub(9)
+        return lobbyCode, playerName
+    end,
+
+    TARGET_CODE_LOBBY
+)
+
+AddMessage(
     "JoinLobbyResponse",
 
     function(lobbyCode, targetPlayer, response)
-        return ("%s %s %s"):format(lobbyCode, targetPlayer, tostring(response))
+        return ("%s %s %s"):format(lobbyCode, targetPlayer, response)
     end,
 
     function(messageData)
@@ -254,16 +270,35 @@ AddMessage(
 )
 
 AddMessage(
+    "PlayerReady",
+
+    function(playerName)
+        return playerName
+    end,
+
+    function(messageData)
+        local playerName = messageData
+        return playerName
+    end,
+
+    TARGET_CODE_SERVER
+)
+
+AddMessage(
     "InitPlayer",
 
-    function(playerName, playerID)
-        return EncodeByte(playerID) .. playerName
+    function(playerName, playerID, location, velocity)
+        return EncodeByte(playerID) .. EncodeFloat(location:GetX()) .. EncodeFloat(location:GetY()) .. EncodeFloat(velocity:GetX()) .. EncodeFloat(velocity:GetY()) .. playerName
     end,
 
     function(messageData)
         local playerID = messageData:byte(1, 1)
-        local playerName = messageData:sub(2)
-        return playerName, playerID
+        local locationX = messageData:sub(2, 5)
+        local locationY = messageData:sub(6, 9)
+        local velocityX = messageData:sub(10, 13)
+        local velocityY = messageData:sub(14, 17)
+        local playerName = messageData:sub(18)
+        return playerName, playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
     end,
 
     TARGET_CODE_ALL_CLIENTS

@@ -50,4 +50,5 @@ Colors = {
     Bouquet = CreateColor(.7, .5, .7, 1),
     Goblin = CreateColor(.2, .5, .2, 1),
     Swamp = CreateColor(0, .1, .1, 1),
+    CursedGrey = CreateColor(.4, .4, .4, 1),
 }

@@ -42,7 +42,9 @@ function ViewProto:SetViewEnabled(enabledState)
                 savedSettings[self:GetCategoryName()][self:GetViewName()] = self:IsViewEnabled()
             end
         end
-        RebuildDebugUI()
+        if RebuildDebugUI then
+            RebuildDebugUI()
+        end
         if self.OnStateChangedCallback then
             self.OnStateChangedCallback(self, self.enabledState)
         end
@@ -144,8 +146,10 @@ function DebugViews.FindDebugView(categoryName, viewName)
     return nil
 end
 
+local CreateDebugViewPane
 function DebugViews.OnSettingsLoaded(settings)
     savedSettings = settings
+
     for categoryName, debugViews in pairs(savedSettings) do
         for debugViewName, debugViewState in pairs(debugViews) do
             local debugView = DebugViews.FindDebugView(categoryName, debugViewName)
@@ -154,150 +158,154 @@ function DebugViews.OnSettingsLoaded(settings)
             end
         end
     end
+
+    CreateDebugViewPane()
 end
 
-local DebugViewPane = CreateFrame("Frame", nil, UIParent)
-DebugViewPane:SetWidth(250)
-DebugViewPane:SetHeight(700)
-DebugViewPane:SetPoint("RIGHT", -2, 0)
-DebugViewPane:SetToplevel(true)
-DebugViewPane:SetFrameStrata("HIGH")
+function CreateDebugViewPane()
+    local DebugViewPane = CreateFrame("Frame", nil, UIParent)
+    DebugViewPane:SetWidth(250)
+    DebugViewPane:SetHeight(700)
+    DebugViewPane:SetPoint("RIGHT", -2, 0)
+    DebugViewPane:SetToplevel(true)
+    DebugViewPane:SetFrameStrata("HIGH")
 
-do
-    local Background = DebugViewPane:CreateTexture(nil, "BACKGROUND", nil, -7)
-    Background:SetColorTexture(Colors.Swamp:GetRGBA())
-    Background:SetAllPoints(DebugViewPane)
-end
+    Background.AddStandardBackground(DebugViewPane)
 
-do
-    local Border = DebugViewPane:CreateTexture(nil, "BACKGROUND", nil, -8)
-    Border:SetColorTexture(Colors.Black:GetRGBA())
-    local BORDER_SIZE = 2
-    Border:SetPoint("TOPLEFT", -BORDER_SIZE, BORDER_SIZE)
-    Border:SetPoint("BOTTOMRIGHT", BORDER_SIZE, -BORDER_SIZE)
-end
+    do
+        local function Reset(pool, frame)
+            frame:SetWidth(200)
+            frame:SetHeight(20)
+            frame:ClearAllPoints()
+            frame:Hide()
 
-do
-    local function Reset(pool, frame)
-        frame:SetWidth(200)
-        frame:SetHeight(20)
-        frame:ClearAllPoints()
-        frame:Hide()
+            if not frame.CheckButton then
+                frame.CheckButton = CreateFrame("CheckButton", nil, frame)
+                frame.CheckButton:SetWidth(20)
+                frame.CheckButton:SetHeight(20)
+                frame.CheckButton:SetPoint("LEFT", frame, "LEFT", 10, 0)
+                frame.CheckButton:SetNormalTexture([[Interface\Buttons\UI-CheckBox-Up]])
+                frame.CheckButton:SetPushedTexture([[Interface\Buttons\UI-CheckBox-Down]])
+                frame.CheckButton:SetHighlightTexture([[Interface\Buttons\UI-CheckBox-Highlight]])
+                frame.CheckButton:SetCheckedTexture([[Interface\Buttons\UI-CheckBox-Check]])
+                frame.CheckButton:SetHitRectInsets(0, -160, 0, 0)
 
-        if not frame.CheckButton then
-            frame.CheckButton = CreateFrame("CheckButton", nil, frame)
-            frame.CheckButton:SetWidth(20)
-            frame.CheckButton:SetHeight(20)
-            frame.CheckButton:SetPoint("LEFT", frame, "LEFT", 10, 0)
-            frame.CheckButton:SetNormalTexture([[Interface\Buttons\UI-CheckBox-Up]])
-            frame.CheckButton:SetPushedTexture([[Interface\Buttons\UI-CheckBox-Down]])
-            frame.CheckButton:SetHighlightTexture([[Interface\Buttons\UI-CheckBox-Highlight]])
-            frame.CheckButton:SetCheckedTexture([[Interface\Buttons\UI-CheckBox-Check]])
-            frame.CheckButton:SetHitRectInsets(0, -160, 0, 0)
+                frame.Label = frame:CreateFontString()
+                frame.Label:SetFontObject("GameFontWhite")
+                frame.Label:SetJustifyH("LEFT")
 
-            frame.Label = frame:CreateFontString()
-            frame.Label:SetFontObject("GameFontWhite")
-            frame.Label:SetJustifyH("LEFT")
+                function frame:AsToggle(debugView)
+                    self:SetScript("OnUpdate", nil)
 
-            function frame:AsToggle(debugView)
-                self:SetScript("OnUpdate", nil)
+                    self.CheckButton:SetChecked(debugView:IsViewEnabled())
+                    self.Label:SetPoint("LEFT", self.CheckButton, "RIGHT", 2, 0)
+                    self.CheckButton:Show()
+                    self.Label:SetText(debugView:GetViewName())
 
-                self.CheckButton:SetChecked(debugView:IsViewEnabled())
-                self.Label:SetPoint("LEFT", self.CheckButton, "RIGHT", 2, 0)
-                self.CheckButton:Show()
-                self.Label:SetText(debugView:GetViewName())
+                    self.CheckButton:SetScript("OnClick", function(self)
+                        debugView:SetViewEnabled(self:GetChecked())
+                    end)
 
-                self.CheckButton:SetScript("OnClick", function(self)
-                    debugView:SetViewEnabled(self:GetChecked())
-                end)
+                    self:Show()
+                end
 
-                self:Show()
-            end
+                function frame:AsProfile(debugView)
+                    self.CheckButton:Hide()
+                    self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
+                    self:SetScript("OnUpdate", function()
+                        self.Label:SetFormattedText("%s: %.2fms", debugView:GetViewName(), debugView:GetAveragedProfileTime())
+                    end)
+                    self:Show()
+                end
 
-            function frame:AsProfile(debugView)
-                self.CheckButton:Hide()
-                self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
-                self:SetScript("OnUpdate", function()
-                    self.Label:SetFormattedText("%s: %.2fms", debugView:GetViewName(), debugView:GetAveragedProfileTime())
-                end)
-                self:Show()
-            end
+                function frame:AsFramerate()
+                    self.CheckButton:Hide()
+                    self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
+                    self:SetScript("OnUpdate", function()
+                        self.Label:SetFormattedText("FPS: %.1f", GetFramerate())
+                    end)
+                    self:Show()
+                end
 
-            function frame:AsFramerate()
-                self.CheckButton:Hide()
-                self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
-                self:SetScript("OnUpdate", function()
-                    self.Label:SetFormattedText("FPS: %.1f", GetFramerate())
-                end)
-                self:Show()
-            end
+                function frame:AsNetStats()
+                    self.CheckButton:Hide()
+                    self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
+                    self:SetScript("OnUpdate", function()
+                        local bandwidthIn, bandwidthOut, homeLatency, worldLatency = GetNetStats()
+                        self.Label:SetFormattedText("I:%.1fKBs O:%.1fKBs", bandwidthIn, bandwidthOut)
+                    end)
+                    self:Show()
+                end
 
-            function frame:AsNetStats()
-                self.CheckButton:Hide()
-                self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
-                self:SetScript("OnUpdate", function()
-                    local bandwidthIn, bandwidthOut, homeLatency, worldLatency = GetNetStats()
-                    self.Label:SetFormattedText("I:%.1fKBs O:%.1fKBs", bandwidthIn, bandwidthOut)
-                end)
-                self:Show()
-                
-            end
+                function frame:AsLatency()
+                    self.CheckButton:Hide()
+                    self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 25, 0)
+                    self:SetScript("OnUpdate", function()
+                        local bandwidthIn, bandwidthOut, homeLatency, worldLatency = GetNetStats()
+                        self.Label:SetFormattedText("H:%sms W:%sms", homeLatency, worldLatency)
+                    end)
+                    self:Show()
+                end
 
-            function frame:AsHeader(categoryName)
-                self:SetScript("OnUpdate", nil)
+                function frame:AsHeader(categoryName)
+                    self:SetScript("OnUpdate", nil)
 
-                self.CheckButton:Hide()
-                self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 0, 0)
-                self.Label:SetText(categoryName)
-                self:Show()
-            end
-        end
-    end
-
-    local rowPool = CreateFramePool("Frame", DebugViewPane, nil, Reset)
-
-    function RebuildDebugUI()
-        rowPool:ReleaseAll()
-
-        local panelHeight = 0
-        local yPadding = 0
-        local previousRow
-
-        local function GetRow()
-            local row = rowPool:Acquire()
-            if previousRow then
-                row:SetPoint("TOP", previousRow, "BOTTOM", 0, yPadding)
-            else
-                row:SetPoint("TOP", DebugViewPane, "TOP", 0, yPadding)
-            end
-
-            panelHeight = panelHeight + row:GetHeight() + yPadding
-            previousRow = row
-            return row
-        end
-
-        do
-            local header = GetRow()
-            header:AsHeader("Debug Info")
-            GetRow():AsFramerate()
-            GetRow():AsNetStats()
-        end
-
-        for categoryName, categoricalDebugViews in pairs(categoriesToViews) do
-            local header = GetRow()
-            header:AsHeader(categoryName)
-
-            for i, debugView in ipairs(categoricalDebugViews) do
-                local row = GetRow()
-
-                if debugView:GetViewType() == ViewType.Toggle then
-                    row:AsToggle(debugView)
-                elseif debugView:GetViewType() == ViewType.TimedProfile then
-                    row:AsProfile(debugView)
+                    self.CheckButton:Hide()
+                    self.Label:SetPoint("LEFT", self.CheckButton, "LEFT", 0, 0)
+                    self.Label:SetText(categoryName)
+                    self:Show()
                 end
             end
         end
 
-        DebugViewPane:SetHeight(panelHeight)
+        local rowPool = CreateFramePool("Frame", DebugViewPane, nil, Reset)
+
+        function RebuildDebugUI()
+            rowPool:ReleaseAll()
+
+            local panelHeight = 0
+            local yPadding = 0
+            local previousRow
+
+            local function GetRow()
+                local row = rowPool:Acquire()
+                if previousRow then
+                    row:SetPoint("TOP", previousRow, "BOTTOM", 0, yPadding)
+                else
+                    row:SetPoint("TOP", DebugViewPane, "TOP", 0, yPadding)
+                end
+
+                panelHeight = panelHeight + row:GetHeight() + yPadding
+                previousRow = row
+                return row
+            end
+
+            do
+                local header = GetRow()
+                header:AsHeader("Debug Info")
+                GetRow():AsFramerate()
+                GetRow():AsNetStats()
+                GetRow():AsLatency()
+            end
+
+            for categoryName, categoricalDebugViews in pairs(categoriesToViews) do
+                local header = GetRow()
+                header:AsHeader(categoryName)
+
+                for i, debugView in ipairs(categoricalDebugViews) do
+                    local row = GetRow()
+
+                    if debugView:GetViewType() == ViewType.Toggle then
+                        row:AsToggle(debugView)
+                    elseif debugView:GetViewType() == ViewType.TimedProfile then
+                        row:AsProfile(debugView)
+                    end
+                end
+            end
+
+            DebugViewPane:SetHeight(panelHeight)
+        end
     end
+
+    RebuildDebugUI()
 end

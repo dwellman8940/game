@@ -18,6 +18,8 @@ function ServerMixin:Initialize()
     self.physicsSystem = CreatePhysicsSystem(self)
     self.nextPlayerID = 1
 
+    self.pendingPlayers = {}
+
     self.elapsed = 0
     self.lastTickTime = GetTime()
     self.ticker = C_Timer.NewTicker(0, function() self:TryTick() end)
@@ -42,18 +44,41 @@ function ServerMixin:BeginGame(levelToLoad, playersInLobbby)
     end
 end
 
+function ServerMixin:FindPlayerByName(playerName)
+    for playerID, playerEntity in pairs(self.players) do
+        if playerEntity:GetPlayerName() == playerName then
+            return playerEntity
+        end
+    end
+    return nil
+end
+
 function ServerMixin:AddPlayer(playerName)
-    local player = self:CreateEntity(PlayerEntityMixin)
+    self.pendingPlayers[playerName] = nil
+
+    local existingPlayer = self:FindPlayerByName(playerName)
+    if existingPlayer then
+        -- Reconnecting to the same player, restore player
+        self.pendingFullPlayerInit = true
+        return
+    end
+
+    local player = self:CreateEntity(PlayerEntityMixin, nil, nil, playerName)
 
     local playerID = self.nextPlayerID
     player:SetPlayerID(playerID)
     self.players[playerID] = player
-    self:SendMessageToAllClients("InitPlayer", playerName, playerID)
 
     self.nextPlayerID = self.nextPlayerID + 1
     if self.nextPlayerID > 255 then
         self.nextPlayerID = 1
     end
+
+    self.pendingFullPlayerInit = true
+end
+
+function ServerMixin:AddPendingPlayer(playerName)
+    self.pendingPlayers[playerName] = GetTime()
 end
 
 function ServerMixin:LoadLevel(levelName)
@@ -69,8 +94,8 @@ function ServerMixin:SendMessageToAllClients(messageName, ...)
     self.serverNetworkConnection:SendMessageToAllClients(messageName, ...)
 end
 
-function ServerMixin:CreateNetworkConnection(lobbyCode, localClient)
-    local localClientOnMessageReceived = localClient and function(messageName, ...) localClient:AddMessageToQueue(messageName, ...) end or nil
+function ServerMixin:CreateNetworkConnection(lobbyCode, localClient, clientHandlers)
+    local localClientOnMessageReceived = localClient and function(messageName, ...) localClient:AddMessageToQueue(clientHandlers, messageName, ...) end or nil
 
     local function OnMessageReceived(messageName, ...)
         self:AddMessageToQueue(messageName, ...)
@@ -106,6 +131,13 @@ function ServerMixin:Tick(delta)
     for i, entity in entityGraph:EnumerateAll() do
         entity:TickServerInternal(delta)
     end
+
+    if self.pendingFullPlayerInit then
+        self.pendingFullPlayerInit = nil
+        for playerID, playerEntity in pairs(self.players) do
+            self:SendMessageToAllClients("InitPlayer", playerEntity:GetPlayerName(), playerID, playerEntity:GetWorldLocation(), playerEntity:GetVelocity())
+        end
+    end
 end
 
 function ServerMixin:ProcessMessages()
@@ -122,9 +154,9 @@ function ServerMixin:GetEntityGraph()
     return self.entityGraph
 end
 
-function ServerMixin:CreateEntity(entityMixin, parentEntity, relativeLocation)
+function ServerMixin:CreateEntity(entityMixin, parentEntity, relativeLocation, ...)
     local gameEntity = CreateFromMixins(entityMixin)
-    gameEntity:InitializeOnServer(self, parentEntity, relativeLocation)
+    gameEntity:InitializeOnServer(self, parentEntity, relativeLocation, ...)
     if not parentEntity then
         self:GetEntityGraph():AddToRoot(gameEntity)
     end
@@ -135,5 +167,11 @@ function ServerMessageHandlers:OnMovement(playerID, location, velocity)
     local player = self.players[playerID]
     if player then
         player:ApplyRemoveMovement(location, velocity)
+    end
+end
+
+function ServerMessageHandlers:PlayerReady(playerName)
+    if self.pendingPlayers[playerName] then
+        self:AddPlayer(playerName)
     end
 end

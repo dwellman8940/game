@@ -46,6 +46,7 @@ Import("type")
 Import("print")
 Import("select")
 Import("tostring")
+Import("tonumber")
 Import("unpack")
 Import("next")
 

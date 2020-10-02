@@ -18,6 +18,7 @@ Localization/enUS.lua
 Math/Vector.lua
 Math/AABB.lua
 
+UI/Background.lua
 UI/Button.lua
 
 Physics/AABBTree.lua
@@ -28,6 +29,7 @@ Networking/Messages.lua
 Networking/Networking.lua
 
 GameStates/BaseState.lua
+GameStates/NetworkedGameState.lua
 GameStates/EditorState.lua
 GameStates/LobbyState.lua
 GameStates/PlayingState.lua

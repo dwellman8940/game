@@ -10,8 +10,10 @@ PlayerEntityMixin = CreateFromMixins(GameEntityMixin)
 local PLAYER_WIDTH = 40
 local PLAYER_HEIGHT = 70
 
-function PlayerEntityMixin:Initialize(parentEntity, relativeLocation)
+function PlayerEntityMixin:Initialize(parentEntity, relativeLocation, playerName)
     GameEntityMixin.Initialize(self, parentEntity, relativeLocation)
+    self.playerName = playerName
+    self.velocity = CreateVector2()
 
     local PLAYER_WIDTH_HALF = PLAYER_WIDTH * .5
     local PLAYER_HEIGHT_HALF = PLAYER_HEIGHT * .5
@@ -27,6 +29,10 @@ end
 
 function PlayerEntityMixin:Render(delta) -- override
     self:CreateRenderData()
+end
+
+function PlayerEntityMixin:GetPlayerName()
+    return self.playerName
 end
 
 function PlayerEntityMixin:CreateRenderData()
@@ -72,7 +78,7 @@ function PlayerEntityMixin:SetIsLobby(isLobby)
     self.isLobby = isLobby
 end
 
-function PlayerEntityMixin:IsLobby(isLobby)
+function PlayerEntityMixin:IsLobby()
     return self.isLobby
 end
 
@@ -113,11 +119,11 @@ function PlayerEntityMixin:ProcessPendingMovement()
         y = y - 1
     end
 
-    if self.velocity then
-        self.velocity:SetXY(x, y)
-    else
-        self.velocity = CreateVector2(x, y)
-    end
+    self.velocity:SetXY(x, y)
+end
+
+function PlayerEntityMixin:GetVelocity()
+    return self.velocity
 end
 
 local PlayerSpeed = 200

@@ -6,6 +6,7 @@ ClientFrame:SetWidth(800)
 ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
 ClientFrame:SetScale(1.7)
+ClientFrame:EnableMouse(true)
 
 local DebugView_ClientClips = DebugViews.RegisterView("Client", "Clip", true)
 
@@ -45,25 +46,28 @@ function ClientMixin:Initialize()
 
     local ticker
     ClientFrame:SetScript("OnShow", function()
+        self:SwitchToGameState(MainMenuStateMixin)
         ticker = C_Timer.NewTicker(0, function() self:TryTick() end)
     end)
 
     ClientFrame:SetScript("OnHide", function()
         if ticker then
             ticker = ticker:Cancel()
-            self:SwitchToGameState(MainMenuStateMixin)
+            self:SwitchToGameState(nil)
         end
     end)
 end
 
-function ClientMixin:SwitchToGameState(gameState)
-    local newGameState = CreateFromMixins(gameState)
+function ClientMixin:SwitchToGameState(gameStateMixin)
+    local newGameState = gameStateMixin and CreateFromMixins(gameStateMixin) or nil
     if self.gameState then
         self.gameState:End(newGameState)
     end
     self.gameState = newGameState
 
-    self.gameState:BeginInternal(self)
+    if self.gameState then
+        self.gameState:BeginInternal(self)
+    end
 
     self:UnbindKeyboard()
 

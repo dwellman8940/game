@@ -9,14 +9,14 @@ local NameMetatable = {
 
 GameEntityMixin = {}
 
-function GameEntityMixin:InitializeOnServer(server, parentEntity, relativeLocation)
+function GameEntityMixin:InitializeOnServer(server, parentEntity, relativeLocation, ...)
     self.server = server
-    self:Initialize(parentEntity, relativeLocation)
+    self:Initialize(parentEntity, relativeLocation, ...)
 end
 
-function GameEntityMixin:InitializeOnClient(gameState, parentEntity, relativeLocation)
+function GameEntityMixin:InitializeOnClient(gameState, parentEntity, relativeLocation, ...)
     self.gameState = gameState
-    self:Initialize(parentEntity, relativeLocation)
+    self:Initialize(parentEntity, relativeLocation, ...)
 end
 
 function GameEntityMixin:Initialize(parentEntity, relativeLocation)
