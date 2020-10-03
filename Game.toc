@@ -8,6 +8,7 @@ Version.lua
 Util/Mixin.lua
 Util/VarArgs.lua
 Util/Table.lua
+Util/String.lua
 Util/Random.lua
 Util/Color.lua
 Util/DebugViews.lua

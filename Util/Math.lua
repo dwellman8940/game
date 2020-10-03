@@ -43,6 +43,13 @@ function Math.MapRangeClamped(fromStart, fromEnd, toStart, toEnd, amount)
     return Math.Lerp(toStart, toEnd, Math.Saturate(percent))
 end
 
+function Math.RoundToNearestInt(value)
+    if value > 0 then
+        return math.floor(value + .5)
+    end
+    return math.ceil(value - .5)
+end
+
 function Math.CalculateRayRayIntersection(start1, end1, start2, end2)
     local hasIntersection, u, t, intersectionX, intersectionY = Math.LineIntersectRaw(start1, end1, start2, end2)
     return hasIntersection and CreateVector2(intersectionX, intersectionY) or nil
@@ -56,7 +63,7 @@ end
 function Math.LineIntersectRaw(start1, end1, start2, end2)
     local segment1X = end1.x - start1.x
     local segment1Y = end1.y - start1.y
-  
+
     local segment2X = end2.x - start2.x
     local segment2Y = end2.y - start2.y
 

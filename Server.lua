@@ -6,7 +6,9 @@ Server.RemovedReason =
 {
     Left = 1,
     TimedOut = 2,
-    Kicked = 3,
+    Leaving = 3,
+    HostLeft = 4,
+    Kicked = 5,
 }
 
 local ServerMessageHandlers = {}
@@ -272,6 +274,13 @@ end
 function ServerMessageHandlers:PlayerReady(playerName)
     if self.pendingPlayers[playerName] then
         self:AddPlayer(playerName)
+    end
+end
+
+function ServerMessageHandlers:PlayerLeaving(playerID)
+    local playerEntity = self.players[playerID]
+    if playerEntity then
+        self:RemovePlayer(playerID, Server.RemovedReason.Leaving)
     end
 end
 

@@ -69,3 +69,11 @@ function Table.IndexedRemoveFirstOf(tableToRemoveFrom, element)
     end
     return false
 end
+
+function Table.ShallowCopy(source)
+    local t = {}
+    for k, v in pairs(source) do
+        t[k] = v
+    end
+    return t
+end

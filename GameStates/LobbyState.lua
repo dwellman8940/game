@@ -28,8 +28,10 @@ function LobbyStateMixin:Begin()
 end
 
 function LobbyStateMixin:End()
-    if self.lobbyCode then
+    if self:IsHost() then
         self:SendLobbyMessage("CloseLobby", self.lobbyCode)
+    elseif self.localPlayer then
+        self:SendServerMessage("PlayerLeaving", self.localPlayer:GetPlayerID())
     end
 
     NetworkedGameStateMixin.End(self)
@@ -45,9 +47,13 @@ function LobbyStateMixin:End()
     end
 end
 
-local function GenerateLobbyCode()
-    -- 8 values should be plenty unique enough to avoid collisions in the same group/raid
-    return UnitGUID("player"):sub(-8)
+local function GenerateLobbyCode(seed)
+    local randomStream = CreateRandomStream(GetTime(), seed)
+    local lobbyCode = ""
+    for i = 1, 4 do
+        lobbyCode = lobbyCode .. randomStream:GetNextPrintableChar()
+    end
+    return lobbyCode
 end
 
 function LobbyStateMixin:IsHost()
@@ -56,7 +62,7 @@ end
 
 function LobbyStateMixin:HostLobby()
     self.server = CreateServer()
-    self.lobbyCode = GenerateLobbyCode()
+    self.lobbyCode = GenerateLobbyCode(tostring(self))
 
     self:CreateNetworkConnection(self.lobbyCode, self.server)
     self.server:CreateNetworkConnection(self.lobbyCode, self, ClientMessageHandlers)
@@ -90,6 +96,7 @@ function LobbyStateMixin:PlayerRequestedJoin(playerName)
 end
 
 function LobbyStateMixin:JoinGame(lobbyCode)
+    self.lobbyCode = lobbyCode
     self:CreateNetworkConnection(lobbyCode)
     self:LoadLevel("Lobby")
     self:SendServerMessage("PlayerReady", UnitName("player"))
@@ -250,5 +257,12 @@ end
 function LobbyMessageHandlers:JoinLobby(lobbyCode, playerName)
     if self:IsHost() and self.lobbyCode == lobbyCode then
         self:PlayerRequestedJoin(playerName)
+    end
+end
+
+function LobbyMessageHandlers:CloseLobby(lobbyCode)
+    if not self:IsHost() and self.lobbyCode == lobbyCode then
+        local mainMenu = self:GetClient():SwitchToGameState(MainMenuStateMixin)
+        mainMenu:OnDisconnected(Server.RemovedReason.HostLeft)
     end
 end

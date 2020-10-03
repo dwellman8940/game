@@ -24,8 +24,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.]]
 
-local floor = math.floor
-
 local function Mash(data)
     data = tostring(data)
     local n = 0xefc8249d
@@ -33,14 +31,14 @@ local function Mash(data)
     for i = 1, #data do
         n = n + data:byte(i)
         local h = 0.02519603282416938 * n
-        n = floor(h)
+        n = math.floor(h)
         h = h - n
         h = h * n
-        n = floor(h)
+        n = math.floor(h)
         h = h - n
         n = n + h * 0x100000000 -- 2^32
     end
-    return floor(n) * 2.3283064365386963e-10 -- 2^-32
+    return math.floor(n) * 2.3283064365386963e-10 -- 2^-32
 end
 
 local function Alea(...)
@@ -69,20 +67,20 @@ local function Alea(...)
         local t = 2091639 * s0 + c * 2.3283064365386963e-10 -- 2^-32
         s0 = s1
         s1 = s2
-        c = floor(t)
+        c = math.floor(t)
         s2 = t - c
         return s2
+    end
+
+    for i = 1, 5 do
+        random()
     end
 
     return random
 end
 
-local function uint32(random)
-    return random() * 0x100000000 -- 2^32
-end
-
 local function fract53(random)
-    return random() + floor(random() * 0x200000) * 1.1102230246251565e-16 -- 2^-53
+    return random() + math.floor(random() * 0x200000) * 1.1102230246251565e-16 -- 2^-53
 end
 
 --[[ End https://github.com/nquinlan/better-random-numbers-for-javascript-mirror ]]
@@ -90,14 +88,18 @@ end
 local RandomStreamProto = {}
 local RandomStreamMetatable = { __index = RandomStreamProto }
 
-function CreateRandomStream(seed)
+function CreateRandomStream(...)
     local randomStream = setmetatable({}, RandomStreamMetatable)
-    randomStream:Initialize(seed)
+    randomStream:Initialize(...)
     return randomStream
 end
 
-function RandomStreamProto:Initialize(seed)
-    self.randomState = Alea(seed)
+function RandomStreamProto:Initialize(...)
+    if select("#", ...) == 0 then
+        self.randomState = Alea(tostring(self))
+    else
+        self.randomState = Alea(...)
+    end
 end
 
 function RandomStreamProto:GetNextNumber()
@@ -109,10 +111,18 @@ function RandomStreamProto:GetNextColor()
     return CreateColor(self:GetNextNumber(), self:GetNextNumber(), self:GetNextNumber())
 end
 
-function RandomStreamProto:GetNextFract53()
-    return fract53(self.randomState)
+function RandomStreamProto:GetNextByte()
+    return self:GetIntInRange(0, 255)
 end
 
-function RandomStreamProto:GetNextUint32()
-    return uint32(self.randomState)
+function RandomStreamProto:GetIntInRange(min, max)
+    local randFloat = self:GetNextNumber()
+    -- biased, but good enough
+    return math.floor(randFloat * (max - min + 1)) + min
+end
+
+function RandomStreamProto:GetNextPrintableChar()
+    local printableCharacters = String.GetPrintableCharacters()
+    local index = self:GetIntInRange(1, #printableCharacters)
+    return printableCharacters[index]
 end

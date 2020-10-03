@@ -42,9 +42,9 @@ local function OnEvent(self, event, ...)
                         end
                     end
                 else
-                    local lobbyCode = Messages.DecodeLobbyCode(text:sub(2, 9))
-                    local messageByte = text:sub(10, 10)
-                    local data = text:sub(11)
+                    local lobbyCode = Messages.DecodeLobbyCode(text:sub(2, 5))
+                    local messageByte = text:sub(6, 6)
+                    local data = text:sub(7)
                     
                     if targetCode == Messages.TargetCodes.Server then
                         local serverConnection = g_serverConnection[lobbyCode]

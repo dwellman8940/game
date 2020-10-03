@@ -145,11 +145,16 @@ function Messages.DecodeLobbyCode(messageData)
     return DecodeEntireString(messageData)
 end
 
+local function GetByteOverhead()
+    -- Lobby code and message byte
+    return 4 + 1
+end
+
 local function CreateSerializeClosure(messageName, serializeFn)
     return function(...)
         local messageData = serializeFn(...)
         if DebugView_OutgoingMessages:IsViewEnabled() then
-            Debug.Print("Outgoing message:", #messageData .. "b", messageName, ...)
+            Debug.Print("Outgoing message:", (#messageData + GetByteOverhead()) .. "b", messageName, ...)
         end
         return messageData
     end
@@ -157,7 +162,7 @@ end
 
 local function DeserializeHelper(messageName, bytes, ...)
     if DebugView_IncomingMessages:IsViewEnabled() then
-        Debug.Print("Incoming message:", bytes .. "b", messageName, ...)
+        Debug.Print("Incoming message:", (bytes + GetByteOverhead()) .. "b", messageName, ...)
     end
     return ...
 end
@@ -170,12 +175,7 @@ end
 
 local AddMessage
 do
-    local MessageByteEncoding = {
-        "0","1","2","3","4","5","6","7","8","9",
-        "a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
-        "A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-    }
-
+    local MessageByteEncoding = String.GetPrintableCharacters()
     local g_nextMessageID = 1
     function AddMessage(messageName, serializeFn, deserializeFn, ...)
         local message =
@@ -255,8 +255,8 @@ AddMessage(
     end,
 
     function(messageData)
-        local lobbyCode = messageData:sub(1, 8)
-        local playerName = messageData:sub(9)
+        local lobbyCode = messageData:sub(1, 4)
+        local playerName = messageData:sub(5)
         return lobbyCode, playerName
     end,
 
@@ -303,6 +303,21 @@ AddMessage(
     function(messageData)
         local playerName = messageData
         return playerName
+    end,
+
+    Messages.TargetCodes.Server
+)
+
+AddMessage(
+    "PlayerLeaving",
+
+    function(playerID)
+        return EncodeByte(playerID)
+    end,
+
+    function(messageData)
+        local playerID = DecodeByte(messageData, 1)
+        return playerID
     end,
 
     Messages.TargetCodes.Server
