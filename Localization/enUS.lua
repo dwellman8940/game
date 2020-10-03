@@ -12,6 +12,7 @@ local enUS = {
     PartyRequired = [[Join a party or raid to host and join games!]],
     JoinLobbyTitle = [[Join Lobby]],
     SearchingForHosted = [[Searching for hosted games...]],
+    LobbyFullTooltip = [[Lobby is full.]],
 }
 
 Localization.RegisterLocalizations("enUS", enUS)

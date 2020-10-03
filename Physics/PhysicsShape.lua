@@ -4,7 +4,7 @@ setfenv(1, envTable)
 local PhysicsShapeMixin = {}
 
 function CreatePhysicsShape(geometryComponent, vertices)
-    local physicsShape = CreateFromMixins(PhysicsShapeMixin)
+    local physicsShape = Mixin.CreateFromMixins(PhysicsShapeMixin)
     physicsShape:Initialize(geometryComponent, vertices)
     return physicsShape
 end

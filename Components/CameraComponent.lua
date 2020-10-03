@@ -3,7 +3,7 @@ setfenv(1, envTable)
 
 local DebugView_EnableFog = DebugViews.RegisterView("Camera", "Enable Fog", true)
 
-CameraComponentMixin = CreateFromMixins(GameEntityComponentMixin)
+CameraComponentMixin = Mixin.CreateFromMixins(GameEntityComponentMixin)
 
 function CameraComponentMixin:Initialize(owningEntity, worldFrame) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)

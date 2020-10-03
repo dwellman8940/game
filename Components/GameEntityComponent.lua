@@ -10,7 +10,7 @@ local NameMetatable = {
 }
 
 function CreateGameEntityComponent(componentType, owningEntity, ...)
-    local gameEntityComponent = CreateFromMixins(componentType)
+    local gameEntityComponent = Mixin.CreateFromMixins(componentType)
     setmetatable(gameEntityComponent, NameMetatable)
     gameEntityComponent:Initialize(owningEntity, ...)
     return gameEntityComponent

@@ -18,7 +18,7 @@ local DebugView_RawVertices = DebugViews.RegisterView("Geometry", "Raw Vertices"
 local DebugView_ConvexVertices = DebugViews.RegisterView("Geometry", "Convex Vertices")
 local DebugView_ConvexIndices = DebugViews.RegisterView("Geometry", "Convex Indices")
 
-GeometryComponentMixin = CreateFromMixins(GameEntityComponentMixin)
+GeometryComponentMixin = Mixin.CreateFromMixins(GameEntityComponentMixin)
 
 function GeometryComponentMixin:Initialize(owningEntity, vertices, geometryType, geometryOcclusion) -- override
     assert(vertices)

@@ -1,7 +1,7 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-local PlayingStateMixin = CreateFromMixins(NetworkedGameStateMixin)
+local PlayingStateMixin = Mixin.CreateFromMixins(NetworkedGameStateMixin)
 
 local ClientMessageHandlers = {}
 local PeerToPeerMessageHandlers = {}
@@ -12,7 +12,7 @@ function PlayingStateMixin:Begin() -- override
     self.localPlayer = nil
 
     self.entityGraph = CreateEntityGraph()
-    self.physicsSystem = CreatePhysicsSystem(self)
+    self.physicsSystem = CreatePhysicsSystem(self:GetClient())
 
     self.remotePlayers = {}
 end
@@ -85,7 +85,7 @@ function PlayingStateMixin:GetPhysicsSystem()
 end
 
 function PlayingStateMixin:CreateEntity(entityMixin, parentEntity, relativeLocation, ...)
-    local gameEntity = CreateFromMixins(entityMixin)
+    local gameEntity = Mixin.CreateFromMixins(entityMixin)
     gameEntity:InitializeOnClient(self, parentEntity, relativeLocation, ...)
     if not parentEntity then
         self:GetEntityGraph():AddToRoot(gameEntity)

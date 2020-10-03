@@ -1,7 +1,7 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-NetworkedGameStateMixin = CreateFromMixins(GameStateMixin)
+NetworkedGameStateMixin = Mixin.CreateFromMixins(GameStateMixin)
 
 function NetworkedGameStateMixin:Begin() -- override
     self.messageQueue = {}
@@ -28,7 +28,7 @@ function NetworkedGameStateMixin:CreatePeerToPeerConnection(lobbyCode, peerToPee
 
     local localServerOnMessageReceived = localServer and function(messageName, ...) localServer:AddMessageToQueue(messageName, ...) end or nil
 
-    self.peerNetworkConnection = CreatePeerConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, OnPeerToPeerMessageReceived)
+    self.peerNetworkConnection = Networking.CreatePeerConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, OnPeerToPeerMessageReceived)
 end
 
 function NetworkedGameStateMixin:CreateClientNetworkConnection(lobbyCode, clientHandlers, localServer)
@@ -38,7 +38,7 @@ function NetworkedGameStateMixin:CreateClientNetworkConnection(lobbyCode, client
         self:AddMessageToQueue(clientHandlers, messageName, ...)
     end
 
-    self.clientNetworkConnection = CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, OnClientMessageReceived)
+    self.clientNetworkConnection = Networking.CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, OnClientMessageReceived)
 end
 
 function NetworkedGameStateMixin:CreateLobbyConnection(lobbyHandlers)
@@ -46,7 +46,7 @@ function NetworkedGameStateMixin:CreateLobbyConnection(lobbyHandlers)
         self:AddMessageToQueue(lobbyHandlers, messageName, ...)
     end
 
-    self.lobbyNetworkConnection = CreateLobbyConnection(UnitName("player"), OnLobbyMessageReceived)
+    self.lobbyNetworkConnection = Networking.CreateLobbyConnection(UnitName("player"), OnLobbyMessageReceived)
 end
 
 function NetworkedGameStateMixin:AddMessageToQueue(handlers, messageName, ...)

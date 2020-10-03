@@ -66,7 +66,6 @@ Import("GetLocale")
 Import("C_ChatInfo")
 Import("C_Timer")
 
-Import("CreateFromMixins")
 Import("ObjectPoolMixin")
 Import("CreateFramePool")
 Import("CreateTexturePool")

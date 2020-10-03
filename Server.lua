@@ -6,7 +6,7 @@ local ServerMessageHandlers = {}
 local ServerMixin = {}
 
 function CreateServer()
-    local server = CreateFromMixins(ServerMixin)
+    local server = Mixin.CreateFromMixins(ServerMixin)
     server:Initialize()
 
     return server
@@ -15,7 +15,7 @@ end
 function ServerMixin:Initialize()
     self.messageQueue = {}
     self.entityGraph = CreateEntityGraph()
-    self.physicsSystem = CreatePhysicsSystem(self)
+    self.physicsSystem = CreatePhysicsSystem(nil)
     self.nextPlayerID = 1
 
     self.pendingPlayers = {}
@@ -101,7 +101,7 @@ function ServerMixin:CreateNetworkConnection(lobbyCode, localClient, clientHandl
         self:AddMessageToQueue(messageName, ...)
     end
 
-    self.serverNetworkConnection = CreateServerConnection(UnitName("player"), lobbyCode, localClientOnMessageReceived, OnMessageReceived)
+    self.serverNetworkConnection = Networking.CreateServerConnection(UnitName("player"), lobbyCode, localClientOnMessageReceived, OnMessageReceived)
 end
 
 function ServerMixin:AddMessageToQueue(messageName, ...)
@@ -155,7 +155,7 @@ function ServerMixin:GetEntityGraph()
 end
 
 function ServerMixin:CreateEntity(entityMixin, parentEntity, relativeLocation, ...)
-    local gameEntity = CreateFromMixins(entityMixin)
+    local gameEntity = Mixin.CreateFromMixins(entityMixin)
     gameEntity:InitializeOnServer(self, parentEntity, relativeLocation, ...)
     if not parentEntity then
         self:GetEntityGraph():AddToRoot(gameEntity)

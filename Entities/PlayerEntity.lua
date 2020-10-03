@@ -5,7 +5,7 @@ local DebugView_EnableCollision = DebugViews.RegisterView("Player", "Enable Coll
 local DebugView_ReplicateServerAABB = DebugViews.RegisterView("Player", "Replicate Server AABB")
 local DebugView_RemoteInterpolation = DebugViews.RegisterView("Player", "Remote Interpolation", true)
 
-PlayerEntityMixin = CreateFromMixins(GameEntityMixin)
+PlayerEntityMixin = Mixin.CreateFromMixins(GameEntityMixin)
 
 local PLAYER_WIDTH = 40
 local PLAYER_HEIGHT = 70

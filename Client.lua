@@ -34,7 +34,7 @@ Pools.Initialize(WorldFrame, RenderFrame)
 local ClientMixin = {}
 
 function CreateClient()
-    local client = CreateFromMixins(ClientMixin)
+    local client = Mixin.CreateFromMixins(ClientMixin)
     client:Initialize()
 
     return client
@@ -59,7 +59,7 @@ function ClientMixin:Initialize()
 end
 
 function ClientMixin:SwitchToGameState(gameStateMixin)
-    local newGameState = gameStateMixin and CreateFromMixins(gameStateMixin) or nil
+    local newGameState = gameStateMixin and Mixin.CreateFromMixins(gameStateMixin) or nil
     if self.gameState then
         self.gameState:End(newGameState)
     end

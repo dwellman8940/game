@@ -4,7 +4,7 @@ setfenv(1, envTable)
 local AABBTreeMixin = {}
 
 function CreateAABBTree()
-    local aabbTree = CreateFromMixins(AABBTreeMixin)
+    local aabbTree = Mixin.CreateFromMixins(AABBTreeMixin)
     aabbTree:Initialize()
     return aabbTree
 end

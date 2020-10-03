@@ -7,7 +7,7 @@ local DebugView_ShadowMesh = DebugViews.RegisterView("Occlusion", "Shadow Mesh")
 
 local DebugView_Time = DebugViews.RegisterProfileStatistic("Occlusion", "Time")
 
-OcclusionComponentMixin = CreateFromMixins(GameEntityComponentMixin)
+OcclusionComponentMixin = Mixin.CreateFromMixins(GameEntityComponentMixin)
 
 function OcclusionComponentMixin:Initialize(owningEntity) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)

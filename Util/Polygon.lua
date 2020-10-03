@@ -78,12 +78,6 @@ local function IsReachable(i, j, vertices)
     return true
 end
 
-local function ConcatTables(listDest, listSource)
-    for i, v in ipairs(listSource) do
-        table.insert(listDest, v)
-    end
-end
-
 -- Bayazit's algorithm - https://mpen.ca/406/bayazit
 function Polygon.ConcaveDecompose(vertices)
     local list = {}
@@ -163,8 +157,8 @@ function Polygon.ConcaveDecompose(vertices)
                 upperPoly = Slice(bestIndex, i, vertices)
             end
 
-            ConcatTables(list, Polygon.ConcaveDecompose(lowerPoly))
-            ConcatTables(list, Polygon.ConcaveDecompose(upperPoly))
+            Table.AppendTable(list, Polygon.ConcaveDecompose(lowerPoly))
+            Table.AppendTable(list, Polygon.ConcaveDecompose(upperPoly))
             return list
         end
     end
@@ -172,8 +166,8 @@ function Polygon.ConcaveDecompose(vertices)
     if #vertices > 20 then
         lowerPoly = Slice(1, math.floor(#vertices / 2), vertices)
         upperPoly = Slice(math.floor(#vertices / 2), 1, vertices)
-        ConcatTables(list, Polygon.ConcaveDecompose(lowerPoly))
-        ConcatTables(list, Polygon.ConcaveDecompose(upperPoly))
+        Table.AppendTable(list, Polygon.ConcaveDecompose(lowerPoly))
+        Table.AppendTable(list, Polygon.ConcaveDecompose(upperPoly))
     else
         table.insert(list, Polygon.Simplify(vertices))
     end
@@ -405,14 +399,6 @@ local function MarkProcessed(clip)
     end
 end
 
-local function ReverseRange(i, j, t)
-    while i < j do
-        t[i], t[j] = t[j], t[i]
-        j = j - 1
-        i = i + 1
-    end
-end
-
 -- Greiner-Hormann
 -- See https://www.inf.usi.ch/hormann/papers/Greiner.1998.ECO.pdf
 -- https://www.habrador.com/tutorials/math/12-cut-polygons
@@ -523,7 +509,7 @@ function Polygon.UnionPolygons(polygonA, polygonB)
         until not current
 
         if not sourceInClip then
-            ReverseRange(1, #result, result)
+            Table.ReverseRange(result, 1, #result)
         end
         return Polygon.Simplify(result)
     end

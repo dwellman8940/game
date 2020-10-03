@@ -3,6 +3,10 @@
 
 Imports.lua
 
+Version.lua
+
+Util/Mixin.lua
+Util/Table.lua
 Util/Random.lua
 Util/Color.lua
 Util/DebugViews.lua
@@ -18,8 +22,11 @@ Localization/enUS.lua
 Math/Vector.lua
 Math/AABB.lua
 
-UI/Background.lua
-UI/Button.lua
+UI/UI.lua
+UI/Fundamental/Background.lua
+UI/Fundamental/Button.lua
+UI/DebugViewUI.lua
+UI/MainMenuUI.lua
 
 Physics/AABBTree.lua
 Physics/PhysicsShape.lua

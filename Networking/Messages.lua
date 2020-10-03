@@ -1,17 +1,27 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+Messages = {}
+
+Messages.TargetCodes =
+{
+    AllClients = "A",
+    ServerAndPeers = "P",
+    Server = "S",
+    Lobby = "L",
+}
+
 local DebugView_OutgoingMessages = DebugViews.RegisterView("Networking", "Outgoing Messages")
 local DebugView_IncomingMessages = DebugViews.RegisterView("Networking", "Incoming Messages")
 
 local MessagesByName = {}
 local MessagesByByte = {}
 
-function GetMessageByName(message)
+function Messages.GetMessageByName(message)
     return MessagesByName[message]
 end
 
-function GetMessageByByte(messageByte)
+function Messages.GetMessageByByte(messageByte)
     return MessagesByByte[messageByte]
 end
 
@@ -123,26 +133,13 @@ local function DecodeFloat(float)
     do return math.ldexp(mantissa, exponent - 127) end
 end
 
-function EncodeLobbyCode(lobbyCode)
+function Messages.EncodeLobbyCode(lobbyCode)
     return EncodeEntireString(lobbyCode)
 end
 
-function DecodeLobbyCode(messageData)
+function Messages.DecodeLobbyCode(messageData)
     return DecodeEntireString(messageData)
 end
-
-local function InvertIndexedTable(t)
-    local inverted = {}
-    for i, v in ipairs(t) do
-        inverted[v] = i
-    end
-    return inverted
-end
-
-TARGET_CODE_ALL_CLIENTS = "A"
-TARGET_CODE_SERVER_AND_PEERS = "P"
-TARGET_CODE_SERVER = "S"
-TARGET_CODE_LOBBY = "L"
 
 local function CreateSerializeClosure(messageName, serializeFn)
     return function(...)
@@ -183,7 +180,7 @@ do
             MessageByte = MessageByteEncoding[g_nextMessageID],
             Serialize = CreateSerializeClosure(messageName, serializeFn or NoSerialize),
             Deserialize = CreateDeserializeClosure(messageName, deserializeFn and function(messageData) return deserializeFn(DecodeEntireString(messageData)) end or NoDeserialize),
-            ValidConnections = InvertIndexedTable{ ... }
+            ValidConnections = Table.CreateSet(...)
         }
 
         MessagesByName[messageName] = message
@@ -205,7 +202,7 @@ AddMessage(
         return lobbyCode, hostPlayer, tonumber(numPlayers), tonumber(maxPlayers)
     end,
 
-    TARGET_CODE_LOBBY
+    Messages.TargetCodes.Lobby
 )
 
 AddMessage(
@@ -220,7 +217,7 @@ AddMessage(
         return lobbyCode
     end,
 
-    TARGET_CODE_LOBBY
+    Messages.TargetCodes.Lobby
 )
 
 AddMessage(
@@ -236,7 +233,7 @@ AddMessage(
         return lobbyCode, playerName
     end,
 
-    TARGET_CODE_LOBBY
+    Messages.TargetCodes.Lobby
 )
 
 AddMessage(
@@ -251,7 +248,7 @@ AddMessage(
         return lobbyCode, targetPlayer, tonumber(response)
     end,
 
-    TARGET_CODE_LOBBY
+    Messages.TargetCodes.Lobby
 )
 
 AddMessage(
@@ -266,7 +263,7 @@ AddMessage(
         return levelName
     end,
 
-    TARGET_CODE_ALL_CLIENTS
+    Messages.TargetCodes.AllClients
 )
 
 AddMessage(
@@ -281,7 +278,7 @@ AddMessage(
         return playerName
     end,
 
-    TARGET_CODE_SERVER
+    Messages.TargetCodes.Server
 )
 
 AddMessage(
@@ -301,7 +298,7 @@ AddMessage(
         return playerName, playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
     end,
 
-    TARGET_CODE_ALL_CLIENTS
+    Messages.TargetCodes.AllClients
 )
 
 AddMessage(
@@ -320,7 +317,7 @@ AddMessage(
         return playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
     end,
 
-    TARGET_CODE_SERVER_AND_PEERS
+    Messages.TargetCodes.ServerAndPeers
 )
 
 AddMessage(
@@ -338,5 +335,5 @@ AddMessage(
         return CreateAABB(CreateVector2(DecodeFloat(minX), DecodeFloat(minY)), CreateVector2(DecodeFloat(maxX), DecodeFloat(maxY)))
     end,
 
-    TARGET_CODE_ALL_CLIENTS
+    Messages.TargetCodes.AllClients
 )

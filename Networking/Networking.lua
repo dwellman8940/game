@@ -1,6 +1,8 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+Networking = {}
+
 -- No attempts to prevent sniffing here, don't play with cheaters!
 
 local PREFIX = "GAME"
@@ -29,43 +31,43 @@ local function OnEvent(self, event, ...)
             if channel == "PARTY" or channel == "RAID" then
                 local targetCode = text:sub(1, 1)
                 local ambiguatedSender = Ambiguate(sender, "short")
-                if targetCode == TARGET_CODE_LOBBY then
+                if targetCode == Messages.TargetCodes.Lobby then
                     if g_lobbyConnection then
                         local messageByte = text:sub(2, 2)
                         local data = text:sub(3)
 
-                        local messageInfo = GetMessageByByte(messageByte)
-                        if messageInfo and messageInfo.ValidConnections[TARGET_CODE_LOBBY] then
+                        local messageInfo = Messages.GetMessageByByte(messageByte)
+                        if messageInfo and messageInfo.ValidConnections[Messages.TargetCodes.Lobby] then
                             g_lobbyConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
                         end
                     end
                 else
-                    local lobbyCode = DecodeLobbyCode(text:sub(2, 9))
+                    local lobbyCode = Messages.DecodeLobbyCode(text:sub(2, 9))
                     local messageByte = text:sub(10, 10)
                     local data = text:sub(11)
                     
-                    if targetCode == TARGET_CODE_SERVER then
+                    if targetCode == Messages.TargetCodes.Server then
                         local serverConnection = g_serverConnection[lobbyCode]
                         if serverConnection then
-                            local messageInfo = GetMessageByByte(messageByte)
-                            if messageInfo and messageInfo.ValidConnections[TARGET_CODE_SERVER] then
+                            local messageInfo = Messages.GetMessageByByte(messageByte)
+                            if messageInfo and messageInfo.ValidConnections[Messages.TargetCodes.Server] then
                                 serverConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
                             end
                         end
-                    elseif targetCode == TARGET_CODE_ALL_CLIENTS then
+                    elseif targetCode == Messages.TargetCodes.AllClients then
                         local clientConnection = g_clientConnection[lobbyCode]
                         if clientConnection then
-                            local messageInfo = GetMessageByByte(messageByte)
-                            if messageInfo and messageInfo.ValidConnections[TARGET_CODE_ALL_CLIENTS] then
+                            local messageInfo = Messages.GetMessageByByte(messageByte)
+                            if messageInfo and messageInfo.ValidConnections[Messages.TargetCodes.AllClients] then
                                 clientConnection:OnMessageReceived(ambiguatedSender, messageInfo.MessageName, messageInfo.Deserialize(data))
                             end
                         end
-                    elseif targetCode == TARGET_CODE_SERVER_AND_PEERS then
+                    elseif targetCode == Messages.TargetCodes.ServerAndPeers then
                         local peerConnection = g_peerConnection[lobbyCode]
                         local serverConnection = g_serverConnection[lobbyCode]
                         if peerConnection or serverConnection then
-                            local messageInfo = GetMessageByByte(messageByte)
-                            if messageInfo and messageInfo.ValidConnections[TARGET_CODE_SERVER_AND_PEERS] then
+                            local messageInfo = Messages.GetMessageByByte(messageByte)
+                            if messageInfo and messageInfo.ValidConnections[Messages.TargetCodes.ServerAndPeers] then
                                 AddMesageToPeersAndServer(ambiguatedSender, peerConnection, serverConnection, messageInfo.MessageName, messageInfo.Deserialize(data))
                             end
                         end
@@ -81,35 +83,35 @@ NetworkingFrame:SetScript("OnEvent", OnEvent)
 
 local function TrySendMessage(lobbyCode, targetCode, messageByte, data)
     if IsInRaid() then
-        C_ChatInfo.SendAddonMessage(PREFIX, targetCode .. (lobbyCode and EncodeLobbyCode(lobbyCode) or "") .. messageByte .. data, "RAID")
+        C_ChatInfo.SendAddonMessage(PREFIX, targetCode .. (lobbyCode and Messages.EncodeLobbyCode(lobbyCode) or "") .. messageByte .. data, "RAID")
     elseif IsInGroup() then
-        C_ChatInfo.SendAddonMessage(PREFIX, targetCode .. (lobbyCode and EncodeLobbyCode(lobbyCode) or "") .. messageByte .. data, "PARTY")
+        C_ChatInfo.SendAddonMessage(PREFIX, targetCode .. (lobbyCode and Messages.EncodeLobbyCode(lobbyCode) or "") .. messageByte .. data, "PARTY")
     end
 end
 
 local function SendMessageToServer(lobbyCode, messageByte, data)
-    TrySendMessage(lobbyCode, TARGET_CODE_SERVER, messageByte, data)
+    TrySendMessage(lobbyCode, Messages.TargetCodes.Server, messageByte, data)
 end
 
 local function SendMessageToLobby(messageByte, data)
-    TrySendMessage(nil, TARGET_CODE_LOBBY, messageByte, data)
+    TrySendMessage(nil, Messages.TargetCodes.Lobby, messageByte, data)
 end
 
 local function SendMessageToAllClients(lobbyCode, messageByte, data)
-    TrySendMessage(lobbyCode, TARGET_CODE_ALL_CLIENTS, messageByte, data)
+    TrySendMessage(lobbyCode, Messages.TargetCodes.AllClients, messageByte, data)
 end
 
 local function SendMessageToPeers(lobbyCode, messageByte, data)
-    TrySendMessage(lobbyCode, TARGET_CODE_SERVER_AND_PEERS, messageByte, data)
+    TrySendMessage(lobbyCode, Messages.TargetCodes.ServerAndPeers, messageByte, data)
 end
 
-function CreateLobbyConnection(owningPlayer, onLobbyMessageReceivedCallback)
+function Networking.CreateLobbyConnection(owningPlayer, onLobbyMessageReceivedCallback)
     assert(g_lobbyConnection == nil)
 
     local LobbyNetworkConnection = {}
 
     function LobbyNetworkConnection:SendMessageToLobby(messageName, ...)
-        local messageInfo = GetMessageByName(messageName)
+        local messageInfo = Messages.GetMessageByName(messageName)
         local data = messageInfo.Serialize(...)
         SendMessageToLobby(messageInfo.MessageByte, data)
     end
@@ -129,7 +131,7 @@ function CreateLobbyConnection(owningPlayer, onLobbyMessageReceivedCallback)
     return LobbyNetworkConnection
 end
 
-function CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onServerMessageReceivedCallback)
+function Networking.CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onServerMessageReceivedCallback)
     local ClientNetworkConnection = {}
 
     if onLocalServerMessageReceivedCallback then
@@ -138,7 +140,7 @@ function CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageRec
         end
     else
         function ClientNetworkConnection:SendMessageToServer(messageName, ...)
-            local messageInfo = GetMessageByName(messageName)
+            local messageInfo = Messages.GetMessageByName(messageName)
             local data = messageInfo.Serialize(...)
             SendMessageToServer(lobbyCode, messageInfo.MessageByte, data)
         end
@@ -159,19 +161,19 @@ function CreateClientConnection(owningPlayer, lobbyCode, onLocalServerMessageRec
     return ClientNetworkConnection
 end
 
-function CreatePeerConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onPeerMessageReceivedCallback)
+function Networking.CreatePeerConnection(owningPlayer, lobbyCode, onLocalServerMessageReceivedCallback, onPeerMessageReceivedCallback)
     local PeerNetworkConnection = {}
 
     if onLocalServerMessageReceivedCallback then
         function PeerNetworkConnection:SendMessageToPeers(messageName, ...)
             onLocalServerMessageReceivedCallback(messageName, ...)
-            local messageInfo = GetMessageByName(messageName)
+            local messageInfo = Messages.GetMessageByName(messageName)
             local data = messageInfo.Serialize(...)
             SendMessageToPeers(lobbyCode, messageInfo.MessageByte, data)
         end
     else
         function PeerNetworkConnection:SendMessageToPeers(messageName, ...)
-            local messageInfo = GetMessageByName(messageName)
+            local messageInfo = Messages.GetMessageByName(messageName)
             local data = messageInfo.Serialize(...)
             SendMessageToPeers(lobbyCode, messageInfo.MessageByte, data)
         end
@@ -192,19 +194,19 @@ function CreatePeerConnection(owningPlayer, lobbyCode, onLocalServerMessageRecei
     return PeerNetworkConnection
 end
 
-function CreateServerConnection(owningPlayer, lobbyCode, onLocalClientMessageReceivedCallback, onClientMessageReceivedCallback)
+function Networking.CreateServerConnection(owningPlayer, lobbyCode, onLocalClientMessageReceivedCallback, onClientMessageReceivedCallback)
     local ServerNetworkConnection = {}
 
     if onLocalClientMessageReceivedCallback then
         function ServerNetworkConnection:SendMessageToAllClients(messageName, ...)
             onLocalClientMessageReceivedCallback(messageName, ...)
-            local messageInfo = GetMessageByName(messageName)
+            local messageInfo = Messages.GetMessageByName(messageName)
             local data = messageInfo.Serialize(...)
             SendMessageToAllClients(lobbyCode, messageInfo.MessageByte, data)
         end
     else
         function ServerNetworkConnection:SendMessageToAllClients(messageName, ...)
-            local messageInfo = GetMessageByName(messageName)
+            local messageInfo = Messages.GetMessageByName(messageName)
             local data = messageInfo.Serialize(...)
             SendMessageToAllClients(lobbyCode, messageInfo.MessageByte, data)
         end

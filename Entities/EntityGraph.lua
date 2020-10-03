@@ -4,7 +4,7 @@ setfenv(1, envTable)
 local EntityGraphMixin = {}
 
 function CreateEntityGraph()
-    local entityGraph = CreateFromMixins(EntityGraphMixin)
+    local entityGraph = Mixin.CreateFromMixins(EntityGraphMixin)
     entityGraph:Initialize()
     return entityGraph
 end

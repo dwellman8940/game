@@ -13,7 +13,7 @@ local g_worldLinePool
 
 local CreateMaskTexturePool
 do
-    local MaskTexturePoolMixin = CreateFromMixins(ObjectPoolMixin)
+    local MaskTexturePoolMixin = Mixin.CreateFromMixins(ObjectPoolMixin)
 
     local function MaskTexturePoolFactory(texturePool)
         return texturePool.parent:CreateMaskTexture(nil, texturePool.layer, texturePool.textureTemplate, texturePool.subLayer)
@@ -28,7 +28,7 @@ do
     end
 
     function CreateMaskTexturePool(parent, layer, subLayer, textureTemplate, resetterFunc)
-        local textureMaskPool = CreateFromMixins(MaskTexturePoolMixin)
+        local textureMaskPool = Mixin.CreateFromMixins(MaskTexturePoolMixin)
         textureMaskPool:OnLoad(parent, layer, subLayer, textureTemplate, resetterFunc)
         return textureMaskPool
     end
@@ -36,7 +36,7 @@ end
 
 local CreateLineTexturePool
 do
-    local LineTexturePoolMixin = CreateFromMixins(ObjectPoolMixin)
+    local LineTexturePoolMixin = Mixin.CreateFromMixins(ObjectPoolMixin)
 
     local function LineTexturePoolFactory(texturePool)
         return texturePool.parent:CreateLine(nil, texturePool.layer, texturePool.textureTemplate, texturePool.subLayer)
@@ -51,7 +51,7 @@ do
     end
 
     function CreateLineTexturePool(parent, layer, subLayer, textureTemplate, resetterFunc)
-        local textureMaskPool = CreateFromMixins(LineTexturePoolMixin)
+        local textureMaskPool = Mixin.CreateFromMixins(LineTexturePoolMixin)
         textureMaskPool:OnLoad(parent, layer, subLayer, textureTemplate, resetterFunc)
         return textureMaskPool
     end

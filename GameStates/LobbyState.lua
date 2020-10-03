@@ -8,7 +8,7 @@ LobbyJoinResponse =
     Unknown = 3,
 }
 
-LobbyStateMixin = CreateFromMixins(NetworkedGameStateMixin)
+LobbyStateMixin = Mixin.CreateFromMixins(NetworkedGameStateMixin)
 
 local TIME_BETWEEN_LOBBY_PINGS = 5
 
@@ -22,7 +22,7 @@ function LobbyStateMixin:Begin()
     self.localPlayer = nil
 
     self.entityGraph = CreateEntityGraph()
-    self.physicsSystem = CreatePhysicsSystem(self)
+    self.physicsSystem = CreatePhysicsSystem(self:GetClient())
 
     self.remotePlayers = {}
 end
@@ -157,7 +157,7 @@ function LobbyStateMixin:GetPhysicsSystem()
 end
 
 function LobbyStateMixin:CreateEntity(entityMixin, parentEntity, relativeLocation, ...)
-    local gameEntity = CreateFromMixins(entityMixin)
+    local gameEntity = Mixin.CreateFromMixins(entityMixin)
     gameEntity:InitializeOnClient(self, parentEntity, relativeLocation, ...)
     if not parentEntity then
         self:GetEntityGraph():AddToRoot(gameEntity)

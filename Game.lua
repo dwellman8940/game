@@ -8,6 +8,6 @@ function GameMixin:Initialize()
 end
 
 do
-    local game = CreateFromMixins(GameMixin)
+    local game = Mixin.CreateFromMixins(GameMixin)
     game:Initialize()
 end

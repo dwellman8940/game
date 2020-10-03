@@ -1,7 +1,7 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-TextureComponentMixin = CreateFromMixins(GameEntityComponentMixin)
+TextureComponentMixin = Mixin.CreateFromMixins(GameEntityComponentMixin)
 
 function TextureComponentMixin:Initialize(owningEntity) -- override
     GameEntityComponentMixin.Initialize(self, owningEntity)
