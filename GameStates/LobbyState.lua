@@ -36,9 +36,7 @@ function LobbyStateMixin:End()
 
     local entityGraph = self:GetEntityGraph()
     if entityGraph then
-        for i, entity in entityGraph:EnumerateAll() do
-            entity:DestroyInternal()
-        end
+        entityGraph:DestroyAll()
     end
 
     if self.server then
@@ -65,6 +63,14 @@ function LobbyStateMixin:HostLobby()
 
     self.server:BeginGame("Lobby", { UnitName("player") })
     self:LoadLevel("Lobby")
+
+    self.server:SetOnPlayerAddedCallback(function()
+        self:QueueUpLobbyPing()
+    end)
+
+    self.server:SetOnPlayerRemovedCallback(function()
+        self:QueueUpLobbyPing()
+    end)
 
     self.nextLobbyPing = 0
 
@@ -115,6 +121,9 @@ end
 
 function LobbyStateMixin:Tick(delta)
     NetworkedGameStateMixin.Tick(self, delta)
+    if self:CheckForServerTimeout() then
+        return
+    end
     self:CheckLobbyPing()
 
     local entityGraph = self:GetEntityGraph()
@@ -136,6 +145,18 @@ function LobbyStateMixin:CheckLobbyPing()
     end
 end
 
+local SERVER_TIMEOUT = 10
+function LobbyStateMixin:CheckForServerTimeout()
+    if not self:IsHost() then
+        if self:HasClientToServerConnection() and not self:HasRecentServerToClientActivity(SERVER_TIMEOUT) then
+            local mainMenu = self:GetClient():SwitchToGameState(MainMenuStateMixin)
+            mainMenu:OnDisconnected(Server.RemovedReason.TimedOut)
+            return true
+        end
+    end
+    return false
+end
+
 function LobbyStateMixin:QueueUpLobbyPing()
     self.queuedLobbyPing = true
 end
@@ -149,7 +170,7 @@ function LobbyStateMixin:GetNumPlayersConnected()
 end
 
 function LobbyStateMixin:BroadcastLobbyState()
-    self:SendLobbyMessage("BroadcastLobby", self.lobbyCode, UnitName("player"), self:GetNumPlayersConnected(), self.lobbySettings.MaxPlayers)
+    self:SendLobbyMessage("BroadcastLobby", self.lobbyCode, UnitName("player"), self:GetNumPlayersConnected(), self.lobbySettings.MaxPlayers, Version.GetVersionAsString())
 end
 
 function LobbyStateMixin:GetPhysicsSystem()
@@ -168,12 +189,18 @@ end
 -- Message Handlers --
 function ClientMessageHandlers:InitPlayer(playerName, playerID, location, velocity)
     if playerName == UnitName("player") then
-        if not self.localPlayer then
+        if self.localPlayer then
+            assert(self.localPlayer:GetPlayerID() == playerID)
+        else
             self.localPlayer = self:CreateEntity(PlayerEntityMixin, nil, location, playerName)
             self.localPlayer:SetIsLobby(true)
             self.localPlayer:SetPlayerID(playerID)
             self.localPlayer:MarkAsLocalPlayer(self:GetClient():GetWorldFrame())
             self:GetClient():BindKeyboardToPlayer(self.localPlayer)
+
+            if self.server then
+                self.server:IgnorePlayerTimeout(playerID)
+            end
         end
     else
         if not self.remotePlayers[playerID] then
@@ -183,6 +210,28 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID, location, veloci
             remotePlayer:ApplyRemoveMovement(location, velocity)
 
             self.remotePlayers[playerID] = remotePlayer
+        end
+    end
+end
+
+function ClientMessageHandlers:Ping(...)
+    if self.localPlayer then
+        local localPlayerID = self.localPlayer:GetPlayerID()
+        if VarArgs.Contains(localPlayerID, ...) then
+            self:SendServerMessage("Pong", localPlayerID)
+        end
+    end
+end
+
+function ClientMessageHandlers:RemovePlayer(playerID, removedReason)
+    if self.localPlayer and self.localPlayer:GetPlayerID() == playerID then
+        local mainMenu = self:GetClient():SwitchToGameState(MainMenuStateMixin)
+        mainMenu:OnDisconnected(removedReason)
+    else
+        local remotePlayer = self.remotePlayers[playerID]
+        if remotePlayer then
+            self.remotePlayers[playerID] = nil
+            self:GetEntityGraph():DestroyEntity(remotePlayer)
         end
     end
 end

@@ -21,6 +21,22 @@ function NetworkedGameStateMixin:End()  -- override
     self.messageQueue = nil
 end
 
+function NetworkedGameStateMixin:MarkServerToClientNetworkActvity()
+    self.lastServerNetworkActivity = GetTime()
+end
+
+function NetworkedGameStateMixin:HasRecentServerToClientActivity(timeout)
+    if self.lastServerNetworkActivity then
+        local activityDelta = GetTime() - self.lastServerNetworkActivity
+        return activityDelta <= timeout
+    end
+    return false
+end
+
+function NetworkedGameStateMixin:HasClientToServerConnection()
+    return self.clientNetworkConnection ~= nil
+end
+
 function NetworkedGameStateMixin:CreatePeerToPeerConnection(lobbyCode, peerToPeerHandlers, localServer)
     local function OnPeerToPeerMessageReceived(messageName, ...)
         self:AddMessageToQueue(peerToPeerHandlers, messageName, ...)
@@ -35,10 +51,12 @@ function NetworkedGameStateMixin:CreateClientNetworkConnection(lobbyCode, client
     local localServerOnMessageReceived = localServer and function(messageName, ...) localServer:AddMessageToQueue(messageName, ...) end or nil
 
     local function OnClientMessageReceived(messageName, ...)
+        self:MarkServerToClientNetworkActvity()
         self:AddMessageToQueue(clientHandlers, messageName, ...)
     end
 
     self.clientNetworkConnection = Networking.CreateClientConnection(UnitName("player"), lobbyCode, localServerOnMessageReceived, OnClientMessageReceived)
+    self:MarkServerToClientNetworkActvity()
 end
 
 function NetworkedGameStateMixin:CreateLobbyConnection(lobbyHandlers)

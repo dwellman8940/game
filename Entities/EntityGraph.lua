@@ -13,8 +13,25 @@ function EntityGraphMixin:Initialize()
     self.childEntities = {}
 end
 
+function EntityGraphMixin:DestroyAll()
+    for i, entity in self:EnumerateAll() do
+        entity:DestroyInternal()
+    end
+    self.childEntities = {}
+end
+
 function EntityGraphMixin:AddToRoot(gameEntity)
     table.insert(self.childEntities, gameEntity)
+end
+
+function EntityGraphMixin:DestroyEntity(gameEntity)
+    local parentEntity = gameEntity:GetParentEntity()
+    if parentEntity then
+        parentEntity:ChildEntityDestroyedInternal(gameEntity)
+    else
+        assert(Table.IndexedRemoveFirstOf(self.childEntities, gameEntity))
+    end
+    gameEntity:DestroyInternal()
 end
 
 do

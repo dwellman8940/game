@@ -36,13 +36,15 @@ function GameEntityMixin:GetName()
 end
 
 function GameEntityMixin:DestroyInternal()
+    self:Destroy()
+
     for i, childEntity in ipairs(self:GetChildEntities()) do
         childEntity:DestroyInternal()
     end
+  
     for i, component in ipairs(self:GetAllComponents()) do
         component:Destroy()
     end
-    self:Destroy()
 end
 
 function GameEntityMixin:Destroy()
@@ -103,6 +105,10 @@ function GameEntityMixin:AddChildObject(childEntity)
     assert(childEntity:GetParentEntity() == self)
 
     table.insert(self.childEntities, childEntity)
+end
+
+function GameEntityMixin:ChildEntityDestroyedInternal(childEntity)
+    assert(Table.IndexedRemoveFirstOf(self.childEntities, childEntity))
 end
 
 function GameEntityMixin:TickServerInternal(delta)

@@ -81,6 +81,10 @@ local function EncodeByte(b)
     return AddonChannelEncoding[b]
 end
 
+local function DecodeByte(messageData, byteIndex)
+    return messageData:byte(byteIndex, byteIndex)
+end
+
 local function EncodeByteString(...)
     local n = select("#", ...)
     local e = ""
@@ -143,23 +147,24 @@ end
 
 local function CreateSerializeClosure(messageName, serializeFn)
     return function(...)
+        local messageData = serializeFn(...)
         if DebugView_OutgoingMessages:IsViewEnabled() then
-            Debug.Print("Outgoing message:", messageName, ...)
+            Debug.Print("Outgoing message:", #messageData .. "b", messageName, ...)
         end
-        return serializeFn(...)
+        return messageData
     end
 end
 
-local function DeserializeHelper(messageName, ...)
+local function DeserializeHelper(messageName, bytes, ...)
     if DebugView_IncomingMessages:IsViewEnabled() then
-        Debug.Print("Incoming message:", messageName, ...)
+        Debug.Print("Incoming message:", bytes .. "b", messageName, ...)
     end
     return ...
 end
 
 local function CreateDeserializeClosure(messageName, deserializeFn)
     return function(messageData)
-        return DeserializeHelper(messageName, deserializeFn(messageData))
+        return DeserializeHelper(messageName, #messageData, deserializeFn(messageData))
     end
 end
 
@@ -190,16 +195,38 @@ do
     end
 end
 
+local PAYLOAD_SEPARATOR = " "
+local workingPayload = {}
+local function JoinPayload(...)
+    local n = select("#", ...)
+    for i = 1, n do
+        workingPayload[i] = select(i, ...)
+    end
+    return table.concat(workingPayload, PAYLOAD_SEPARATOR, 1, n)
+end
+
+local function EncodeAndJoinPayload(encodeFn, ...)
+    return JoinPayload(VarArgs.Apply(encodeFn, ...))
+end
+
+local function SplitPayload(messageData)
+    return string.split(PAYLOAD_SEPARATOR, messageData)
+end
+
+local function SplitAndDecodePayload(decodeFn, messageData)
+    return VarArgs.Apply(decodeFn, string.split(PAYLOAD_SEPARATOR, messageData))
+end
+
 AddMessage(
     "BroadcastLobby",
 
-    function(lobbyCode, hostPlayer, numPlayers, maxPlayers)
-        return ("%s %s %s %s"):format(lobbyCode, hostPlayer, tostring(numPlayers), tostring(maxPlayers))
+    function(lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString)
+        return JoinPayload(lobbyCode, hostPlayer, EncodeByte(numPlayers), EncodeByte(maxPlayers), versionString)
     end,
 
     function(messageData)
-        local lobbyCode, hostPlayer, numPlayers, maxPlayers = messageData:match("^(%S+) (%S+) (%S+) (%S+)$")
-        return lobbyCode, hostPlayer, tonumber(numPlayers), tonumber(maxPlayers)
+        local lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString = SplitPayload(messageData)
+        return lobbyCode, hostPlayer, DecodeByte(numPlayers), DecodeByte(maxPlayers), versionString
     end,
 
     Messages.TargetCodes.Lobby
@@ -240,11 +267,11 @@ AddMessage(
     "JoinLobbyResponse",
 
     function(lobbyCode, targetPlayer, response)
-        return ("%s %s %s"):format(lobbyCode, targetPlayer, response)
+        return JoinPayload(lobbyCode, targetPlayer, response)
     end,
 
     function(messageData)
-         local lobbyCode, targetPlayer, response = messageData:match("^(%S+) (%S+) (%S+)$")
+         local lobbyCode, targetPlayer, response = SplitPayload(messageData)
         return lobbyCode, targetPlayer, tonumber(response)
     end,
 
@@ -285,17 +312,32 @@ AddMessage(
     "InitPlayer",
 
     function(playerName, playerID, location, velocity)
-        return EncodeByte(playerID) .. EncodeFloat(location:GetX()) .. EncodeFloat(location:GetY()) .. EncodeFloat(velocity:GetX()) .. EncodeFloat(velocity:GetY()) .. playerName
+        return EncodeByte(playerID) .. EncodeFloat(location:GetX()) .. EncodeFloat(location:GetY()) .. EncodeByte(velocity:GetX() + 1) .. EncodeByte(velocity:GetY() + 1) .. playerName
     end,
 
     function(messageData)
-        local playerID = messageData:byte(1, 1)
+        local playerID = DecodeByte(messageData, 1)
         local locationX = messageData:sub(2, 5)
         local locationY = messageData:sub(6, 9)
-        local velocityX = messageData:sub(10, 13)
-        local velocityY = messageData:sub(14, 17)
-        local playerName = messageData:sub(18)
-        return playerName, playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
+        local velocityX = DecodeByte(messageData, 10)
+        local velocityY = DecodeByte(messageData, 11)
+        local playerName = messageData:sub(12)
+        return playerName, playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(velocityX - 1, velocityY - 1)
+    end,
+
+    Messages.TargetCodes.AllClients
+)
+
+AddMessage(
+    "RemovePlayer",
+
+    function(playerID)
+        return EncodeByte(playerID)
+    end,
+
+    function(messageData)
+        local playerID = DecodeByte(messageData, 1)
+        return playerID
     end,
 
     Messages.TargetCodes.AllClients
@@ -305,16 +347,16 @@ AddMessage(
     "OnMovement",
 
     function(playerID, location, velocity)
-        return EncodeByte(playerID) .. EncodeFloat(location:GetX()) .. EncodeFloat(location:GetY()) .. EncodeFloat(velocity:GetX()) .. EncodeFloat(velocity:GetY())
+        return EncodeByte(playerID) .. EncodeFloat(location:GetX()) .. EncodeFloat(location:GetY()) .. EncodeByte(velocity:GetX() + 1) .. EncodeByte(velocity:GetY() + 1)
     end,
 
     function(messageData)
-        local playerID = messageData:byte(1, 1)
+        local playerID = DecodeByte(messageData, 1)
         local locationX = messageData:sub(2, 5)
         local locationY = messageData:sub(6, 9)
-        local velocityX = messageData:sub(10, 13)
-        local velocityY = messageData:sub(14, 17)
-        return playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(DecodeFloat(velocityX), DecodeFloat(velocityY))
+        local velocityX = DecodeByte(messageData, 10)
+        local velocityY = DecodeByte(messageData, 11)
+        return playerID, CreateVector2(DecodeFloat(locationX), DecodeFloat(locationY)), CreateVector2(velocityX - 1, velocityY - 1)
     end,
 
     Messages.TargetCodes.ServerAndPeers
@@ -336,4 +378,33 @@ AddMessage(
     end,
 
     Messages.TargetCodes.AllClients
+)
+
+AddMessage(
+    "Ping",
+
+    function(...)
+        return EncodeAndJoinPayload(EncodeByte, ...)
+    end,
+
+    function(messageData)
+        return SplitAndDecodePayload(DecodeByte, messageData)
+    end,
+
+    Messages.TargetCodes.AllClients
+)
+
+AddMessage(
+    "Pong",
+
+    function(playerID)
+        return EncodeByte(playerID)
+    end,
+
+    function(messageData)
+        local playerID = DecodeByte(messageData, 1)
+        return playerID
+    end,
+
+    Messages.TargetCodes.Server
 )

@@ -6,6 +6,7 @@ Imports.lua
 Version.lua
 
 Util/Mixin.lua
+Util/VarArgs.lua
 Util/Table.lua
 Util/Random.lua
 Util/Color.lua

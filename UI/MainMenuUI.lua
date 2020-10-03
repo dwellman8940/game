@@ -81,6 +81,16 @@ function MainMenuFrameMixin:UpdateLobbies(lobbies)
     end
 end
 
+function MainMenuFrameMixin:Close()
+    self:Hide()
+    self.lobbies = nil
+
+    if self.LobbySelectionFrame then
+        self.LobbySelectionFrame:Hide()
+        self.LobbySelectionFrame:UpdateLobbies(nil)
+    end
+end
+
 function MainMenuFrameMixin:SetLobbyDisplayShown(shown)
     if not self.LobbySelectionFrame and shown then
         local callbacks =
@@ -159,6 +169,15 @@ local function IsLobbyFull(lobbyData)
     return lobbyData.numPlayers >= lobbyData.maxPlayers
 end
 
+local function CompareLobbyVersion(lobbyData)
+    local minor, major = Version.GetVersionFromString(lobbyData.versionString)
+    return Version.CompareVersions(minor, major)
+end
+
+local function IsLobbyVersionSame(lobbyData)
+    return CompareLobbyVersion(lobbyData) == Version.CompareResult.Same
+end
+
 function JoinLobbyDialogMixin:CreateJoinLobbyClosure(lobbies, lobbyData)
     return function()
         if self.selectedLobbyCode ~= lobbyData.lobbyCode and not IsLobbyFull(lobbyData) then
@@ -169,25 +188,31 @@ function JoinLobbyDialogMixin:CreateJoinLobbyClosure(lobbies, lobbyData)
 end
 
 local function LobbySort(a, b)
-    if IsLobbyFull(a) and IsLobbyFull(b) then
-        return a.hostPlayer < b.hostPlayer
-    end
-
-    if IsLobbyFull(a) then
+    if IsLobbyVersionSame(a) ~= IsLobbyVersionSame(b) then
+        if IsLobbyVersionSame(a) then
+            return true
+        end
         return false
     end
-    
-    if IsLobbyFull(b) then
+
+    if IsLobbyFull(a) ~= IsLobbyFull(b) then
+        if IsLobbyFull(a) then
+            return false
+        end
         return true
     end
 
     return a.hostPlayer < b.hostPlayer
 end
 
+local function CanLobbyBeJoined(lobbyData)
+    return not IsLobbyFull(lobbyData) and IsLobbyVersionSame(lobbyData)
+end
+
 function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
     self.rowPool:ReleaseAll()
 
-    if not next(lobbies) then
+    if not lobbies or not next(lobbies) then
         self.selectedLobbyCode = nil
         self.JoinButton:SetEnabled(false)
         self.SearchingForGamesLabel:Show()
@@ -214,12 +239,17 @@ function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
             row:SetPoint("TOP", self, "TOP", 0, -45)
         end
         row:SetText(("%s %d/%d"):format(lobbyData.hostPlayer, lobbyData.numPlayers, lobbyData.maxPlayers))
-        row:SetEnabled(not IsLobbyFull(lobbyData))
+        row:SetEnabled(CanLobbyBeJoined(lobbyData))
         row:Show()
 
         row:SetScript("OnClick", self:CreateJoinLobbyClosure(lobbies, lobbyData))
         row:SetScript("OnEnter", function()
-            if IsLobbyFull(lobbyData) then
+            if not IsLobbyVersionSame(lobbyData) then
+                GameTooltip:SetOwner(row, "ANCHOR_NONE")
+                GameTooltip:SetPoint("LEFT", row, "RIGHT", 5, 0)
+                local tooltipText = Localization.GetString(CompareLobbyVersion(lobbyData) == Version.CompareResult.Newer and "LobbyNewerVersionTooltip" or "LobbyOlderVersionTooltip"):format(lobbyData.versionString)
+                GameTooltip:SetText(tooltipText, Colors.Red:GetRGB())
+            elseif IsLobbyFull(lobbyData) then
                 GameTooltip:SetOwner(row, "ANCHOR_NONE")
                 GameTooltip:SetPoint("LEFT", row, "RIGHT", 5, 0)
                 GameTooltip:SetText(Localization.GetString("LobbyFullTooltip"), Colors.Red:GetRGB())

@@ -22,9 +22,7 @@ function PlayingStateMixin:End() -- override
 
     local entityGraph = self:GetEntityGraph()
     if entityGraph then
-        for i, entity in entityGraph:EnumerateAll() do
-            entity:DestroyInternal()
-        end
+        entityGraph:DestroyAll()
     end
 
     if self.server then

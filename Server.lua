@@ -1,6 +1,14 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+Server = {}
+Server.RemovedReason =
+{
+    Left = 1,
+    TimedOut = 2,
+    Kicked = 3,
+}
+
 local ServerMessageHandlers = {}
 
 local ServerMixin = {}
@@ -19,15 +27,27 @@ function ServerMixin:Initialize()
     self.nextPlayerID = 1
 
     self.pendingPlayers = {}
+    self.outstandingPings = {}
+    self.ignorePlayerTimeout = {}
 
     self.elapsed = 0
     self.lastTickTime = GetTime()
     self.ticker = C_Timer.NewTicker(0, function() self:TryTick() end)
+
+    self:MarkSentToClientActivity()
 end
 
 function ServerMixin:Destroy()
     self.ticker:Cancel()
     self.serverNetworkConnection:Disconnect()
+end
+
+function ServerMixin:SetOnPlayerAddedCallback(OnPlayerAddedCallback)
+    self.OnPlayerAddedCallback = OnPlayerAddedCallback
+end
+
+function ServerMixin:SetOnPlayerRemovedCallback(OnPlayerRemovedCallback)
+    self.OnPlayerRemovedCallback = OnPlayerRemovedCallback
 end
 
 function ServerMixin:BeginGame(levelToLoad, playersInLobbby)
@@ -56,18 +76,19 @@ end
 function ServerMixin:AddPlayer(playerName)
     self.pendingPlayers[playerName] = nil
 
-    local existingPlayer = self:FindPlayerByName(playerName)
-    if existingPlayer then
+    local existingPlayerEntity = self:FindPlayerByName(playerName)
+    if existingPlayerEntity then
+        existingPlayerEntity:MarkPlayerActivity()
         -- Reconnecting to the same player, restore player
         self.pendingFullPlayerInit = true
         return
     end
 
-    local player = self:CreateEntity(PlayerEntityMixin, nil, nil, playerName)
+    local playerEntity = self:CreateEntity(PlayerEntityMixin, nil, nil, playerName)
 
     local playerID = self.nextPlayerID
-    player:SetPlayerID(playerID)
-    self.players[playerID] = player
+    playerEntity:SetPlayerID(playerID)
+    self.players[playerID] = playerEntity
 
     self.nextPlayerID = self.nextPlayerID + 1
     if self.nextPlayerID > 255 then
@@ -75,10 +96,43 @@ function ServerMixin:AddPlayer(playerName)
     end
 
     self.pendingFullPlayerInit = true
+
+    if self.OnPlayerAddedCallback then
+        self.OnPlayerAddedCallback(playerName, playerID)
+    end
+end
+
+function ServerMixin:RemovePlayer(playerID, reason)
+    local playerEntity = self.players[playerID]
+    assert(playerEntity)
+    if playerEntity then
+        local playerName = playerEntity:GetPlayerName()
+        self.players[playerID] = nil
+        self.outstandingPings[playerID] = nil
+        self.pendingPlayers[playerName] = nil
+        self.ignorePlayerTimeout[playerID] = nil
+
+        self:GetEntityGraph():DestroyEntity(playerEntity)
+
+        self:SendMessageToAllClients("RemovePlayer", playerID, reason)
+
+        if self.OnPlayerRemovedCallback then
+            self.OnPlayerRemovedCallback(playerName, playerID)
+        end
+    end
 end
 
 function ServerMixin:AddPendingPlayer(playerName)
     self.pendingPlayers[playerName] = GetTime()
+end
+
+function ServerMixin:IgnorePlayerTimeout(playerID)
+    local playerEntity = self.players[playerID]
+    assert(playerEntity)
+
+    if playerEntity then
+        self.ignorePlayerTimeout[playerID] = true
+    end
 end
 
 function ServerMixin:LoadLevel(levelName)
@@ -90,7 +144,12 @@ function ServerMixin:GetPhysicsSystem()
     return self.physicsSystem
 end
 
+function ServerMixin:MarkSentToClientActivity()
+    self.lastMessageToClientsTime = GetTime()
+end
+
 function ServerMixin:SendMessageToAllClients(messageName, ...)
+    self:MarkSentToClientActivity()
     self.serverNetworkConnection:SendMessageToAllClients(messageName, ...)
 end
 
@@ -126,6 +185,7 @@ end
 
 function ServerMixin:Tick(delta)
     self:ProcessMessages()
+    self:CheckForStaleConnections()
 
     local entityGraph = self:GetEntityGraph()
     for i, entity in entityGraph:EnumerateAll() do
@@ -147,6 +207,45 @@ function ServerMixin:ProcessMessages()
             ServerMessageHandlers[messageName](self, unpack(messageData, 2))
         end
         self.messageQueue = {}
+    end
+end
+
+-- Best to not have these constants multiples of each other, otherwise the pings can become cyclic
+local PLAYER_DISCONNECT_TIMEOUT = 13
+local PLAYER_PING_TIMEOUT = 9
+local SERVER_PING_TIMEOUT = 5
+function ServerMixin:CheckForStaleConnections()
+    local pingsToSend
+    for playerID, playerEntity in pairs(self.players) do
+        if not self.ignorePlayerTimeout[playerID] then
+            if not playerEntity:HasBeenActiveRecently(PLAYER_DISCONNECT_TIMEOUT) then
+                self:RemovePlayer(playerID, Server.RemovedReason.TimedOut)
+            elseif not playerEntity:HasBeenActiveRecently(PLAYER_PING_TIMEOUT) then
+                if not self.outstandingPings[playerID] then
+                    self.outstandingPings[playerID] = true
+                    pingsToSend = pingsToSend or {}
+                    table.insert(pingsToSend, playerID)
+                end
+            end
+        end
+    end
+
+    local now = GetTime()
+    for pendingPlayerName, addedTime in pairs(self.pendingPlayers) do
+        local delta = now - addedTime
+        if delta >= PLAYER_PING_TIMEOUT then
+            self.pendingPlayers[pendingPlayerName] = nil
+        end
+    end
+
+    if pingsToSend then
+        self:SendMessageToAllClients("Ping", unpack(pingsToSend))
+    else
+        -- Haven't sent anything to clients recently, ping them all to let them know we're still here
+        local deltaMessageToClients = now - self.lastMessageToClientsTime
+        if deltaMessageToClients >= SERVER_PING_TIMEOUT then
+            self:SendMessageToAllClients("Ping")
+        end
     end
 end
 
@@ -173,5 +272,15 @@ end
 function ServerMessageHandlers:PlayerReady(playerName)
     if self.pendingPlayers[playerName] then
         self:AddPlayer(playerName)
+    end
+end
+
+function ServerMessageHandlers:Pong(playerID)
+    if self.outstandingPings[playerID] then
+        self.outstandingPings[playerID] = nil
+        local player = self.players[playerID]
+        if player then
+            player:MarkPlayerActivity()
+        end
     end
 end

@@ -38,10 +38,34 @@ function Table.AppendTable(destination, tableToAppendFrom)
     return destination
 end
 
-function Table.ReverseRange(table, startIndex, endIndex)
+function Table.ReverseRange(tableToReverse, startIndex, endIndex)
+    startIndex = startIndex or 1
+    endIndex = endIndex or #tableToReverse
+
     while startIndex < endIndex do
-        table[startIndex], table[endIndex] = table[endIndex], table[startIndex]
+        tableToReverse[startIndex], tableToReverse[endIndex] = tableToReverse[endIndex], tableToReverse[startIndex]
         endIndex = endIndex - 1
         startIndex = startIndex + 1
     end
+end
+
+function Table.IndexedRemoveAll(tableToRemoveFrom, element)
+    local numRemoved = 0
+    for i = #tableToRemoveFrom, 1, -1 do
+        if tableToRemoveFrom[i] == element then
+            table.remove(tableToRemoveFrom, i)
+            numRemoved = numRemoved + 1
+        end
+    end
+    return numRemoved
+end
+
+function Table.IndexedRemoveFirstOf(tableToRemoveFrom, element)
+    for i = 1, #tableToRemoveFrom do
+        if tableToRemoveFrom[i] == element then
+            table.remove(tableToRemoveFrom, i)
+            return true
+        end
+    end
+    return false
 end

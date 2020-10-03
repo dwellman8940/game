@@ -25,6 +25,8 @@ function PlayerEntityMixin:Initialize(parentEntity, relativeLocation, playerName
     }
 
     self.geometryComponent = CreateGameEntityComponent(GeometryComponentMixin, self, vertices, GeometryType.Dynamic, GeometryOcclusion.Ignored)
+
+    self:MarkPlayerActivity()
 end
 
 function PlayerEntityMixin:Render(delta) -- override
@@ -33,6 +35,15 @@ end
 
 function PlayerEntityMixin:GetPlayerName()
     return self.playerName
+end
+
+function PlayerEntityMixin:MarkPlayerActivity()
+    self.lastPlayerActivity = GetTime()
+end
+
+function PlayerEntityMixin:HasBeenActiveRecently(timeout)
+    local lastActivityDelta = GetTime() - self.lastPlayerActivity
+    return lastActivityDelta <= timeout
 end
 
 function PlayerEntityMixin:CreateRenderData()
@@ -60,18 +71,22 @@ end
 
 function PlayerEntityMixin:SetMovingLeft(isMovingLeft)
     self.isMovingLeft = isMovingLeft
+    self:MarkPlayerActivity()
 end
 
 function PlayerEntityMixin:SetMovingRight(isMovingRight)
     self.isMovingRight = isMovingRight
+    self:MarkPlayerActivity()
 end
 
 function PlayerEntityMixin:SetMovingForward(isMovingForward)
     self.isMovingForward = isMovingForward
+    self:MarkPlayerActivity()
 end
 
 function PlayerEntityMixin:SetMovingBackward(isMovingBackward)
     self.isMovingBackward = isMovingBackward
+    self:MarkPlayerActivity()
 end
 
 function PlayerEntityMixin:SetIsLobby(isLobby)
@@ -177,4 +192,6 @@ function PlayerEntityMixin:ApplyRemoveMovement(location, velocity)
     self.remoteTimestamp = GetTime()
     self.remoteLocation = location
     self.remoteVelocity = velocity
+
+    self:MarkPlayerActivity()
 end

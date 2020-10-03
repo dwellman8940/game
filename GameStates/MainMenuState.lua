@@ -25,22 +25,26 @@ end
 function MainMenuStateMixin:End() -- override
     NetworkedGameStateMixin.End(self)
 
-    MainMenuFrame:Hide()
+    MainMenuFrame:Close()
 
     self.activeLobbies = nil
+end
+
+function MainMenuStateMixin:OnDisconnected(serverDisconnectReason)
 end
 
 function MainMenuStateMixin:MarkLobbiesChanged()
     self.lobbiesChanged = true
 end
 
-function MainMenuStateMixin:UpdateOrAddLobby(timeStamp, lobbyCode, hostPlayer, numPlayers, maxPlayers)
+function MainMenuStateMixin:UpdateOrAddLobby(timeStamp, lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString)
     self.activeLobbies[lobbyCode] = {
         timeStamp = timeStamp,
         lobbyCode = lobbyCode,
         hostPlayer = hostPlayer,
         numPlayers = numPlayers,
         maxPlayers = maxPlayers,
+        versionString = versionString,
     }
 
     self:MarkLobbiesChanged()
@@ -54,12 +58,12 @@ function MainMenuStateMixin:CloseLobby(lobbyCode)
     end
 end
 
-local LOBBY_TIMEOUT = 15
+local LOBBY_TIMEOUT = 10
 function MainMenuStateMixin:PurgeStaleLobbies()
     local now = GetTime()
     for lobbyCode, lobbyData in pairs(self.activeLobbies) do
         local delta = now - lobbyData.timeStamp
-        if delta > LOBBY_TIMEOUT then
+        if delta >= LOBBY_TIMEOUT then
             self.activeLobbies[lobbyCode] = nil
             self:MarkLobbiesChanged()
         end
@@ -118,8 +122,8 @@ function MainMenuStateMixin:RefreshLobbyDisplay()
     MainMenuFrame:UpdateLobbies(self.activeLobbies)
 end
 
-function LobbyMessageHandlers:BroadcastLobby(lobbyCode, hostPlayer, numPlayers, maxPlayers)
-    self:UpdateOrAddLobby(GetTime(), lobbyCode, hostPlayer, numPlayers, maxPlayers)
+function LobbyMessageHandlers:BroadcastLobby(lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString)
+    self:UpdateOrAddLobby(GetTime(), lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString)
 end
 
 function LobbyMessageHandlers:CloseLobby(lobbyCode)
