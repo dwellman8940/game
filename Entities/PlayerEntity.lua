@@ -55,14 +55,8 @@ function PlayerEntityMixin:CreateRenderData()
     self.textureComponent:SetSize(PLAYER_WIDTH, PLAYER_HEIGHT)
     self.textureComponent:SetRenderLayer(self:IsLocalPlayer() and 32 or 31)
 
-    local colorTable = {
-        {1, 0, 0, .5},
-        {0, 1, 0, .5},
-        {0, 0, 1, .5},
-        {1, 1, 1, .5},
-    }
-
-    self.textureComponent:SetColorTexture(unpack(colorTable[self:GetPlayerID()]))
+    -- TODO: real color system
+    self.textureComponent:SetColorTexture(CreateRandomStream(self:GetPlayerID()):GetNextColor():GetRGBA())
 end
 
 function PlayerEntityMixin:GetName()

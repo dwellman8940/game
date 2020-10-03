@@ -96,7 +96,7 @@ end
 
 function RandomStreamProto:Initialize(...)
     if select("#", ...) == 0 then
-        self.randomState = Alea(tostring(self))
+        self.randomState = Alea(self)
     else
         self.randomState = Alea(...)
     end
