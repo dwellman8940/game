@@ -29,6 +29,8 @@ UI/Fundamental/Background.lua
 UI/Fundamental/Button.lua
 UI/DebugViewUI.lua
 UI/MainMenuUI.lua
+UI/LoadingScreenUI.lua
+UI/LobbyUI.lua
 
 Physics/AABBTree.lua
 Physics/PhysicsShape.lua

@@ -31,6 +31,25 @@ function MainMenuStateMixin:End() -- override
 end
 
 function MainMenuStateMixin:OnDisconnected(serverDisconnectReason)
+    Debug.Print(serverDisconnectReason)
+    if serverDisconnectReason == Server.RemovedReason.HostLeft then
+        MainMenuFrame:ShowAlert(Localization.GetString("DisconnectedReason_HostLeft"), Localization.GetString("ButtonOK"))
+    elseif serverDisconnectReason == Server.RemovedReason.Kicked then
+        MainMenuFrame:ShowAlert(Localization.GetString("DisconnectedReason_Kicked"), Localization.GetString("ButtonOK"))
+    elseif serverDisconnectReason == Server.RemovedReason.TimedOut then
+        MainMenuFrame:ShowAlert(Localization.GetString("DisconnectedReason_TimedOut"), Localization.GetString("ButtonOK"))
+    end
+end
+
+function MainMenuStateMixin:OnFailedToConnectToLobby(lobbyJoinResponse)
+    UI.LoadingScreenUI.End()
+    self.sendLobbyRequestTime = nil
+
+    if not lobbyJoinResponse or lobbyJoinResponse == LobbyJoinResponse.Unknown then
+        MainMenuFrame:ShowAlert(Localization.GetString("UnableToConnectToLobby"), Localization.GetString("ButtonOK"))
+    elseif lobbyJoinResponse == LobbyJoinResponse.Full then
+        MainMenuFrame:ShowAlert(Localization.GetString("UnableToConnectToLobby_Full"), Localization.GetString("ButtonOK"))
+    end
 end
 
 function MainMenuStateMixin:MarkLobbiesChanged()
@@ -70,8 +89,19 @@ function MainMenuStateMixin:PurgeStaleLobbies()
     end
 end
 
+function MainMenuStateMixin:CheckJoinRequestTimeout()
+    if self.sendLobbyRequestTime then
+        local lobbyRequestDelta = GetTime() - self.sendLobbyRequestTime
+        if lobbyRequestDelta > 8 then
+            self:OnFailedToConnectToLobby(nil)
+        end
+    end
+end
+
 function MainMenuStateMixin:Tick(delta) -- override
     NetworkedGameStateMixin.Tick(self, delta)
+
+    self:CheckJoinRequestTimeout()
 
     if not self.activeLobbies then
         return
@@ -93,7 +123,9 @@ function MainMenuStateMixin:HostLobby()
     lobbyState:HostLobby()
 end
 
-function MainMenuStateMixin:JoinLobby(lobbyCode)
+function MainMenuStateMixin:JoinLobby(hostPlayer, lobbyCode)
+    UI.LoadingScreenUI.ConnectingToLobby(hostPlayer)
+    self.sendLobbyRequestTime = GetTime()
     self:SendLobbyMessage("JoinLobby", lobbyCode, UnitName("player"))
 end
 
@@ -101,6 +133,8 @@ function MainMenuStateMixin:JoinLobbyResponse(lobbyCode, response)
     if response == LobbyJoinResponse.Success then
         local lobbyState = self:GetClient():SwitchToGameState(LobbyStateMixin)
         lobbyState:JoinGame(lobbyCode)
+    else
+        self:OnFailedToConnectToLobby(response)
     end
 end
 
@@ -112,7 +146,7 @@ function MainMenuStateMixin:CreateMainMenuFrame()
     local callbacks =
     {
         Host = function() self:HostLobby() end,
-        Join = function(lobbyCode) self:JoinLobby(lobbyCode) end,
+        Join = function(lobbyHost, lobbyCode) self:JoinLobby(lobbyHost, lobbyCode) end,
         LevelEditor = function() self:LevelEditor() end,
     }
     MainMenuFrame = UI.MainMenuUI.CreateMainMenuFrame(self:GetClient():GetRootFrame(), callbacks)

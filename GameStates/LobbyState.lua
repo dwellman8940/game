@@ -208,6 +208,8 @@ function ClientMessageHandlers:InitPlayer(playerName, playerID, location, veloci
             if self.server then
                 self.server:IgnorePlayerTimeout(playerID)
             end
+
+            UI.LoadingScreenUI.End()
         end
     else
         if not self.remotePlayers[playerID] then

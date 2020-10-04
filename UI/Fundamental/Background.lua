@@ -22,7 +22,7 @@ end
 function Background.AddModalUnderlay(parent)
     do
         local Underlay = parent:CreateTexture(nil, "BACKGROUND", nil, -1)
-        Underlay:SetColorTexture(Colors.Black:WithAlpha(.75):GetRGBA())
+        Underlay:SetColorTexture(Colors.Black:WithAlpha(.85):GetRGBA())
         Underlay:SetAllPoints(parent)
     end
 end

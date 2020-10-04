@@ -29,6 +29,7 @@ Background:SetVertTile(true)
 Background:SetAllPoints(WorldFrame)
 Background:Show()
 
+UI.LoadingScreenUI.Initialize(ClientFrame)
 Pools.Initialize(WorldFrame, RenderFrame)
 
 local ClientMixin = {}

@@ -89,6 +89,10 @@ function MainMenuFrameMixin:Close()
         self.LobbySelectionFrame:Hide()
         self.LobbySelectionFrame:UpdateLobbies(nil)
     end
+
+    if self.AlertFrame then
+        self.AlertFrame:Hide()
+    end
 end
 
 function MainMenuFrameMixin:SetLobbyDisplayShown(shown)
@@ -107,6 +111,15 @@ function MainMenuFrameMixin:SetLobbyDisplayShown(shown)
             self:UpdateLobbies(self.lobbies)
         end
     end
+end
+
+function MainMenuFrameMixin:ShowAlert(messageText, button1Text, button1Callback)
+    if not self.AlertFrame then
+        self.AlertFrame = UI.MainMenuUI.CreateAlertDialog(self)
+    end
+    self:SetLobbyDisplayShown(false)
+
+    self.AlertFrame:ShowMessage(messageText, button1Text, button1Callback)
 end
 
 function UI.MainMenuUI.CreateMainMenuFrame(parentFrame, callbacks)
@@ -129,7 +142,7 @@ function JoinLobbyDialogMixin:Initialize(callbacks)
     self:SetWidth(250)
     self:SetHeight(350)
 
-    self.selectedLobbyCode = nil
+    self.selectedLobbyData = nil
 
     local function RowReset(pool, button)
         button:SetWidth(200)
@@ -180,8 +193,8 @@ end
 
 function JoinLobbyDialogMixin:CreateJoinLobbyClosure(lobbies, lobbyData)
     return function()
-        if self.selectedLobbyCode ~= lobbyData.lobbyCode and not IsLobbyFull(lobbyData) then
-            self.selectedLobbyCode = lobbyData.lobbyCode
+        if (not self.selectedLobbyData or self.selectedLobbyData.lobbyCode ~= lobbyData.lobbyCode) and not IsLobbyFull(lobbyData) then
+            self.selectedLobbyData = lobbyData
             self:UpdateLobbies(lobbies)
         end
     end
@@ -213,14 +226,14 @@ function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
     self.rowPool:ReleaseAll()
 
     if not lobbies or not next(lobbies) then
-        self.selectedLobbyCode = nil
+        self.selectedLobbyData = nil
         self.JoinButton:SetEnabled(false)
         self.SearchingForGamesLabel:Show()
         return
     end
 
-    if not lobbies[self.selectedLobbyCode] then
-        self.selectedLobbyCode = nil
+    if self.selectedLobbyData and not lobbies[self.selectedLobbyData.lobbyCode] then
+        self.selectedLobbyData = nil
     end
 
     local sortedLobbies = {}
@@ -260,7 +273,7 @@ function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
             GameTooltip:Hide()
         end)
 
-        if self.selectedLobbyCode == lobbyData.lobbyCode then
+        if self.selectedLobbyData and self.selectedLobbyData.lobbyCode == lobbyData.lobbyCode then
             row:LockHighlight()
         else
             row:UnlockHighlight()
@@ -270,19 +283,21 @@ function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
     end
 
     self.SearchingForGamesLabel:Hide()
-    self.JoinButton:SetEnabled(self.selectedLobbyCode ~= nil)
+    self.JoinButton:SetEnabled(self.selectedLobbyData ~= nil)
 end
 
 function JoinLobbyDialogMixin:CreateSubFrames()
-    local LobbySelectionFrameModal = CreateFrame("Frame", nil, self:GetParent())
-    LobbySelectionFrameModal:SetFrameStrata("HIGH")
-    LobbySelectionFrameModal:SetAllPoints(self:GetParent())
-    LobbySelectionFrameModal:EnableMouse(true)
+    do
+        local ModalFrame = CreateFrame("Frame", nil, self:GetParent())
+        ModalFrame:SetFrameStrata("HIGH")
+        ModalFrame:SetAllPoints(self:GetParent())
+        ModalFrame:EnableMouse(true)
 
-    self:SetScript("OnShow", function() LobbySelectionFrameModal:Show() end)
-    self:SetScript("OnHide", function() LobbySelectionFrameModal:Hide() end)
+        self:SetScript("OnShow", function() ModalFrame:Show() end)
+        self:SetScript("OnHide", function() ModalFrame:Hide() end)
 
-    Background.AddModalUnderlay(LobbySelectionFrameModal)
+        Background.AddModalUnderlay(ModalFrame)
+    end
 
     do
         local JoinLabel = self:CreateFontString(nil, "ARTWORK")
@@ -315,7 +330,7 @@ function JoinLobbyDialogMixin:CreateSubFrames()
         JoinButton:SetEnabled(false)
         JoinButton:SetText(Localization.GetString("JoinLobby"))
         JoinButton:SetPoint("BOTTOM", 0, 4)
-        JoinButton:SetScript("OnClick", function() self.callbacks.Join(self.selectedLobbyCode) end)
+        JoinButton:SetScript("OnClick", function() self.callbacks.Join(self.selectedLobbyData.hostPlayer, self.selectedLobbyData.lobbyCode) end)
         self.JoinButton = JoinButton
     end
 end
@@ -325,4 +340,54 @@ function UI.MainMenuUI.CreateJoinLobbyDialog(parentFrame, callbacks)
     Mixin.MixinInto(LobbySelectionFrame, JoinLobbyDialogMixin)
     LobbySelectionFrame:Initialize(callbacks)
     return LobbySelectionFrame
+end
+
+local AlertDialogFrameMixin = {}
+
+function AlertDialogFrameMixin:Initialize()
+    do
+        local ModalFrame = CreateFrame("Frame", nil, self:GetParent())
+        ModalFrame:SetFrameStrata("HIGH")
+        ModalFrame:SetAllPoints(self:GetParent())
+        ModalFrame:EnableMouse(true)
+
+        self:SetScript("OnShow", function() ModalFrame:Show() end)
+        self:SetScript("OnHide", function() ModalFrame:Hide() end)
+
+        Background.AddModalUnderlay(ModalFrame)
+    end
+
+    Background.AddStandardBackground(self)
+
+    self:SetFrameStrata("DIALOG")
+    self:SetWidth(250)
+    self:SetHeight(130)
+    self:SetPoint("CENTER")
+
+    self.MessageText = self:CreateFontString(nil, "ARTWORK")
+    self.MessageText:SetFontObject("GameFontHighlight")
+    self.MessageText:SetPoint("TOPLEFT", 20, -20)
+    self.MessageText:SetPoint("BOTTOMRIGHT", -20, 35)
+
+    self.Button1 = Button.CreateStandardButton(self)
+    self.Button2 = Button.CreateStandardButton(self)
+end
+
+function AlertDialogFrameMixin:ShowMessage(messageText, button1Text, button1Callback)
+    self.MessageText:SetText(messageText)
+
+    self.Button1:SetPoint("BOTTOM", 0, 15)
+    self.Button1:SetText(button1Text)
+    self.Button1:SetScript("OnClick", button1Callback or function() self:Hide() end)
+
+    self.Button2:Hide()
+
+    self:Show()
+end
+
+function UI.MainMenuUI.CreateAlertDialog(parentFrame)
+    local AlertDialogFrame = CreateFrame("Frame", nil, parentFrame)
+    Mixin.MixinInto(AlertDialogFrame, AlertDialogFrameMixin)
+    AlertDialogFrame:Initialize()
+    return AlertDialogFrame
 end
