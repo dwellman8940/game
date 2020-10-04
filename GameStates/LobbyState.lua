@@ -1,6 +1,8 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local LobbyFrame
+
 LobbyJoinResponse =
 {
     Success = 1,
@@ -25,6 +27,13 @@ function LobbyStateMixin:Begin()
     self.physicsSystem = CreatePhysicsSystem(self:GetClient())
 
     self.remotePlayers = {}
+
+    local callbacks =
+    {
+        ExitToMainMenu = function() self:GetClient():SwitchToGameState(MainMenuStateMixin) end,
+        StartGame = function() self:StartGame() end
+    }
+    LobbyFrame = UI.LobbyUI.CreateLobbyUI(self:GetClient():GetRootFrame(), callbacks)
 end
 
 function LobbyStateMixin:End()
@@ -45,6 +54,9 @@ function LobbyStateMixin:End()
         self.server:Destroy()
         self.server = nil
     end
+end
+
+function LobbyStateMixin:StartGame()
 end
 
 local function GenerateLobbyCode(seed)

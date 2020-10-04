@@ -18,7 +18,6 @@ local enUS = {
     LobbyOlderVersionTooltip = [[This lobby has an older version than you.|nEncourage the host to upgrade to the latest version!]],
     UnableToConnectToLobby = [[Unable to connect to lobby.]],
     UnableToConnectToLobby_Full = [[Lobby is full.]],
-    UnableToConnectToLobby_Full = [[Lobby is full.]],
 
     LoadingScreen_JoiningLobby = [[Connecting to %s's Lobby...]],
 

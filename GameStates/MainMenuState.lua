@@ -15,8 +15,16 @@ function MainMenuStateMixin:Begin() -- override
     if MainMenuFrame then
         MainMenuFrame:Show()
     else
-        self:CreateMainMenuFrame()
+        MainMenuFrame = UI.MainMenuUI.CreateMainMenuFrame(self:GetClient():GetRootFrame())
     end
+
+    local callbacks =
+    {
+        Host = function() self:HostLobby() end,
+        Join = function(lobbyHost, lobbyCode) self:JoinLobby(lobbyHost, lobbyCode) end,
+        LevelEditor = function() self:LevelEditor() end,
+    }
+    MainMenuFrame:SetCallbacks(callbacks)
 
     self:CreateLobbyConnection(LobbyMessageHandlers)
     self.activeLobbies = {}
@@ -140,16 +148,6 @@ end
 
 function MainMenuStateMixin:LevelEditor()
     self:GetClient():SwitchToGameState(LevelEditorStateMixin)
-end
-
-function MainMenuStateMixin:CreateMainMenuFrame()
-    local callbacks =
-    {
-        Host = function() self:HostLobby() end,
-        Join = function(lobbyHost, lobbyCode) self:JoinLobby(lobbyHost, lobbyCode) end,
-        LevelEditor = function() self:LevelEditor() end,
-    }
-    MainMenuFrame = UI.MainMenuUI.CreateMainMenuFrame(self:GetClient():GetRootFrame(), callbacks)
 end
 
 function MainMenuStateMixin:RefreshLobbyDisplay()

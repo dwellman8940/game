@@ -7,9 +7,7 @@ UI.MainMenuUI = {}
 
 local MainMenuFrameMixin = {}
 
-function MainMenuFrameMixin:Initialize(callbacks)
-    self.callbacks = callbacks
-
+function MainMenuFrameMixin:Initialize()
     self:SetAllPoints(self:GetParent())
 
     local BORDER_SIZE = 3
@@ -30,7 +28,7 @@ function MainMenuFrameMixin:Initialize(callbacks)
         local HostGameButton = Button.CreateLargeButton(self)
         HostGameButton:SetPoint("CENTER", 0, 100)
         HostGameButton:SetText(Localization.GetString("HostGame"))
-        HostGameButton:SetScript("OnClick", callbacks.Host)
+        HostGameButton:SetScript("OnClick", function() self.callbacks.Host() end)
         self.HostGameButton = HostGameButton
     end
 
@@ -61,8 +59,12 @@ function MainMenuFrameMixin:Initialize(callbacks)
         local LevelEditorButton = Button.CreateStandardButton(self)
         LevelEditorButton:SetPoint("BOTTOMLEFT", 10, 10)
         LevelEditorButton:SetText(Localization.GetString("LevelEditor"))
-        LevelEditorButton:SetScript("OnClick", callbacks.LevelEditor)
+        LevelEditorButton:SetScript("OnClick", function() self.callbacks.LevelEditor() end)
     end
+end
+
+function MainMenuFrameMixin:SetCallbacks(callbacks)
+    self.callbacks = callbacks
 end
 
 function MainMenuFrameMixin:SetHasGroup(hasGroup)
@@ -84,9 +86,11 @@ end
 function MainMenuFrameMixin:Close()
     self:Hide()
     self.lobbies = nil
+    self.callbacks = nil
 
     if self.LobbySelectionFrame then
         self.LobbySelectionFrame:Hide()
+        self.LobbySelectionFrame:SetCallbacks(nil)
         self.LobbySelectionFrame:UpdateLobbies(nil)
     end
 
@@ -97,18 +101,19 @@ end
 
 function MainMenuFrameMixin:SetLobbyDisplayShown(shown)
     if not self.LobbySelectionFrame and shown then
-        local callbacks =
-        {
-            Join = self.callbacks.Join,
-            CloseDialog = function() self:SetLobbyDisplayShown(false) end,
-        }
-        self.LobbySelectionFrame = UI.MainMenuUI.CreateJoinLobbyDialog(self, callbacks)
+        self.LobbySelectionFrame = UI.MainMenuUI.CreateJoinLobbyDialog(self)
     end
 
     if self.LobbySelectionFrame then
         self.LobbySelectionFrame:SetShown(shown)
-        if shown and self.lobbies then
-            self:UpdateLobbies(self.lobbies)
+        if shown then
+            local callbacks =
+            {
+                Join = self.callbacks.Join,
+                CloseDialog = function() self:SetLobbyDisplayShown(false) end,
+            }
+            self.LobbySelectionFrame:SetCallbacks(callbacks)
+            self.LobbySelectionFrame:UpdateLobbies(self.lobbies)
         end
     end
 end
@@ -122,19 +127,17 @@ function MainMenuFrameMixin:ShowAlert(messageText, button1Text, button1Callback)
     self.AlertFrame:ShowMessage(messageText, button1Text, button1Callback)
 end
 
-function UI.MainMenuUI.CreateMainMenuFrame(parentFrame, callbacks)
+function UI.MainMenuUI.CreateMainMenuFrame(parentFrame)
     local MainMenuFrame = CreateFrame("Frame", nil, parentFrame)
     Mixin.MixinInto(MainMenuFrame, MainMenuFrameMixin)
-    MainMenuFrame:Initialize(callbacks)
+    MainMenuFrame:Initialize()
 
     return MainMenuFrame
 end
 
 local JoinLobbyDialogMixin = {}
 
-function JoinLobbyDialogMixin:Initialize(callbacks)
-    self.callbacks = callbacks
-
+function JoinLobbyDialogMixin:Initialize()
     self:CreateSubFrames()
 
     self:SetFrameStrata("DIALOG")
@@ -176,6 +179,10 @@ function JoinLobbyDialogMixin:Initialize(callbacks)
     end
 
     self.rowPool = CreateFramePool("Button", self, nil, RowReset)
+end
+
+function JoinLobbyDialogMixin:SetCallbacks(callbacks)
+    self.callbacks = callbacks
 end
 
 local function IsLobbyFull(lobbyData)
@@ -322,7 +329,7 @@ function JoinLobbyDialogMixin:CreateSubFrames()
     do
         local CloseButton = Button.CreateCloseButton(self)
         CloseButton:SetPoint("TOPRIGHT", -2, -2)
-        CloseButton:SetScript("OnClick", self.callbacks.CloseDialog)
+        CloseButton:SetScript("OnClick", function() self.callbacks.CloseDialog() end)
     end
 
     do
@@ -335,10 +342,10 @@ function JoinLobbyDialogMixin:CreateSubFrames()
     end
 end
 
-function UI.MainMenuUI.CreateJoinLobbyDialog(parentFrame, callbacks)
+function UI.MainMenuUI.CreateJoinLobbyDialog(parentFrame)
     local LobbySelectionFrame = CreateFrame("Frame", nil, parentFrame)
     Mixin.MixinInto(LobbySelectionFrame, JoinLobbyDialogMixin)
-    LobbySelectionFrame:Initialize(callbacks)
+    LobbySelectionFrame:Initialize()
     return LobbySelectionFrame
 end
 
