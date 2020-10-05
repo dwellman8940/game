@@ -2,20 +2,15 @@ local addonName, envTable = ...
 setfenv(1, envTable)
 
 local LoadingScreenFrame
-local ClientFrame
 
 UI.LoadingScreenUI = {}
-
-function UI.LoadingScreenUI.Initialize(clientFrame)
-    ClientFrame = clientFrame
-end
 
 local function CreateLoadingScreen()
     if LoadingScreenFrame then
         return
     end
 
-    LoadingScreenFrame = CreateFrame("Frame", nil, ClientFrame)
+    LoadingScreenFrame = CreateFrame("Frame", nil, UI.GetUIParentFrame())
     local BORDER_SIZE = 3
     LoadingScreenFrame:SetPoint("TOPLEFT", BORDER_SIZE, -BORDER_SIZE)
     LoadingScreenFrame:SetPoint("BOTTOMRIGHT", -BORDER_SIZE, BORDER_SIZE)
@@ -46,7 +41,7 @@ local function CreateLoadingScreen()
     end
 end
 
-function UI.LoadingScreenUI.End()
+function UI.LoadingScreenUI.Close()
     if UI.LoadingScreenUI.IsVisible() then
         LoadingScreenFrame:Hide()
     end
@@ -56,6 +51,13 @@ function UI.LoadingScreenUI.ConnectingToLobby(hostName)
     CreateLoadingScreen()
 
     LoadingScreenFrame.PrimaryText:SetFormattedText(Localization.GetString("LoadingScreen_JoiningLobby"), hostName)
+    LoadingScreenFrame:Show()
+end
+
+function UI.LoadingScreenUI.StartingGame()
+    CreateLoadingScreen()
+
+    LoadingScreenFrame.PrimaryText:SetText(Localization.GetString("LoadingScreen_GameStarting"))
     LoadingScreenFrame:Show()
 end
 

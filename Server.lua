@@ -53,7 +53,7 @@ function ServerMixin:SetOnPlayerRemovedCallback(OnPlayerRemovedCallback)
 end
 
 function ServerMixin:BeginGame(levelToLoad, playersInLobbby)
-    self:SendMessageToAllClients("LoadLevel", levelToLoad)
+    --self:SendMessageToAllClients("LoadLevel", levelToLoad)
 
     self:LoadLevel(levelToLoad)
 
@@ -61,7 +61,7 @@ function ServerMixin:BeginGame(levelToLoad, playersInLobbby)
 
     if playersInLobbby then
         for i, playerName in ipairs(playersInLobbby) do
-            self:AddPlayer(playerName)
+            self:AddPendingPlayer(playerName)
         end
     end
 end

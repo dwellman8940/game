@@ -5,8 +5,12 @@ local ClientFrame = CreateFrame("Frame", nil, GameFrame)
 ClientFrame:SetWidth(800)
 ClientFrame:SetHeight(600)
 ClientFrame:SetPoint("CENTER")
-ClientFrame:SetScale(1.7)
+ClientFrame:SetScale(1.1)
 ClientFrame:EnableMouse(true)
+
+local WindowBackground = ClientFrame:CreateTexture(nil, "BACKGROUND", nil, -8)
+WindowBackground:SetAllPoints(ClientFrame)
+WindowBackground:SetColorTexture(Colors.DarkGrey:GetRGBA())
 
 local DebugView_ClientClips = DebugViews.RegisterView("Client", "Clip", true)
 
@@ -22,14 +26,14 @@ WorldFrame:SetWidth(1024)
 WorldFrame:SetHeight(1024)
 
 --TODO: Should not be here
-local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", nil, -8)
+local Background = WorldFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
 Background:SetTexture("Interface/Addons/Game/Assets/Textures/grid", "REPEAT", "REPEAT")
 Background:SetHorizTile(true)
 Background:SetVertTile(true)
 Background:SetAllPoints(WorldFrame)
 Background:Show()
 
-UI.LoadingScreenUI.Initialize(ClientFrame)
+UI.Initialize(ClientFrame)
 Pools.Initialize(WorldFrame, RenderFrame)
 
 local ClientMixin = {}

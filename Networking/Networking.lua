@@ -226,3 +226,11 @@ function Networking.CreateServerConnection(owningPlayer, lobbyCode, onLocalClien
 
     return ServerNetworkConnection
 end
+
+function Networking.GetPing()
+    return (select(3, GetNetStats()))
+end
+
+function Networking.GetPingSeconds()
+    return Networking.GetPing() / 1000
+end

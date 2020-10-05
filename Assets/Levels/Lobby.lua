@@ -11,23 +11,16 @@ local BoxVertices = {
     CreateVector2(WIDTH, -HEIGHT),
 }
 
-local LongBoxVertices = {
-    CreateVector2(-WIDTH * 4, -HEIGHT * .2),
-    CreateVector2(-WIDTH * 4, HEIGHT * .2),
-    CreateVector2(WIDTH * 4, HEIGHT * .2),
-    CreateVector2(WIDTH * 4, -HEIGHT * .2),
-}
-
-local TallBoxVertices = {
-    CreateVector2(-WIDTH * .2, -HEIGHT * 4),
-    CreateVector2(-WIDTH * .2, HEIGHT * 4),
-    CreateVector2(WIDTH * .2, HEIGHT * 4),
-    CreateVector2(WIDTH * .2, -HEIGHT * 4),
+local DiagonalVertices = {
+    CreateVector2(-WIDTH, -HEIGHT * 3),
+    CreateVector2(WIDTH, HEIGHT * 3),
+    CreateVector2(WIDTH * 2, HEIGHT * 3),
+    CreateVector2(0, -HEIGHT * 3),
 }
 
 local LEVEL_HALF_SIZE = 5
-local LEVEL_HALF_WIDTH = 512
-local LEVEL_HALF_HEIGHT = 512
+local LEVEL_HALF_WIDTH = 256
+local LEVEL_HALF_HEIGHT = 256
 local LevelBoundsV = {
     CreateVector2(-LEVEL_HALF_SIZE , -LEVEL_HALF_HEIGHT),
     CreateVector2(-LEVEL_HALF_SIZE, LEVEL_HALF_HEIGHT),
@@ -49,35 +42,26 @@ local LevelData = {
             Occlusion = 1,
             Vertices = BoxVertices,
             WorldLocation = {
-                x = 250,
-                y = 250,
+                x = 90,
+                y = 125,
             }
         },
         {
             Mobility = 1,
             Occlusion = 1,
-            Vertices = LongBoxVertices,
-            WorldLocation = {
-                x = -250,
-                y = -250,
-            }
-        },
-        {
-            Mobility = 1,
-            Occlusion = 1,
-            Vertices = TallBoxVertices,
-            WorldLocation = {
-                x = -250,
-                y = -150,
-            }
-        },
-        {
-            Mobility = 1,
-            Occlusion = 1,
-            Vertices = TallBoxVertices,
+            Vertices = BoxVertices,
             WorldLocation = {
                 x = -150,
-                y = -120,
+                y = -125,
+            }
+        },
+        {
+            Mobility = 1,
+            Occlusion = 1,
+            Vertices = DiagonalVertices,
+            WorldLocation = {
+                x = 150,
+                y = -105,
             }
         },
         {
@@ -85,7 +69,7 @@ local LevelData = {
             Occlusion = 2,
             Vertices = LevelBoundsV,
             WorldLocation = {
-                x = 512 + LEVEL_HALF_SIZE,
+                x = 256 + LEVEL_HALF_SIZE,
                 y = 0,
             }
         },
@@ -94,7 +78,7 @@ local LevelData = {
             Occlusion = 2,
             Vertices = LevelBoundsV,
             WorldLocation = {
-                x = -512 - LEVEL_HALF_SIZE,
+                x = -256 - LEVEL_HALF_SIZE,
                 y = 0,
             }
         },
@@ -104,7 +88,7 @@ local LevelData = {
             Vertices = LevelBoundsH,
             WorldLocation = {
                 x = 0,
-                y = 512 + LEVEL_HALF_SIZE,
+                y = 256 + LEVEL_HALF_SIZE,
             }
         },
         {
@@ -113,7 +97,7 @@ local LevelData = {
             Vertices = LevelBoundsH,
             WorldLocation = {
                 x = 0,
-                y = -512 - LEVEL_HALF_SIZE,
+                y = -256 - LEVEL_HALF_SIZE,
             }
         },
     },

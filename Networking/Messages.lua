@@ -137,6 +137,14 @@ local function DecodeFloat(float)
     do return math.ldexp(mantissa, exponent - 127) end
 end
 
+local function EncodeBool(b)
+    return b and "1" or "0"
+end
+
+local function DecodeBool(b)
+    return b == "1"
+end
+
 function Messages.EncodeLobbyCode(lobbyCode)
     return EncodeEntireString(lobbyCode)
 end
@@ -220,13 +228,13 @@ end
 AddMessage(
     "BroadcastLobby",
 
-    function(lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString)
-        return JoinPayload(lobbyCode, hostPlayer, EncodeByte(numPlayers), EncodeByte(maxPlayers), versionString)
+    function(lobbyCode, hostPlayer, gameStarting, numPlayers, maxPlayers, versionString)
+        return JoinPayload(lobbyCode, hostPlayer, EncodeBool(gameStarting), EncodeByte(numPlayers), EncodeByte(maxPlayers), versionString)
     end,
 
     function(messageData)
-        local lobbyCode, hostPlayer, numPlayers, maxPlayers, versionString = SplitPayload(messageData)
-        return lobbyCode, hostPlayer, DecodeByte(numPlayers), DecodeByte(maxPlayers), versionString
+        local lobbyCode, hostPlayer, gameStarting, numPlayers, maxPlayers, versionString = SplitPayload(messageData)
+        return lobbyCode, hostPlayer, DecodeBool(gameStarting), DecodeByte(numPlayers), DecodeByte(maxPlayers), versionString
     end,
 
     Messages.TargetCodes.Lobby
@@ -322,6 +330,8 @@ AddMessage(
 
     Messages.TargetCodes.Server
 )
+
+AddMessage("GameStartCountdown", nil, nil, Messages.TargetCodes.AllClients)
 
 AddMessage(
     "InitPlayer",

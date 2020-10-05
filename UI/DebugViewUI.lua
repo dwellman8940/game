@@ -98,7 +98,7 @@ end
 
 function UI.DebugViewUI.CreateDebugViewPane()
     local DebugViewPane = CreateFrame("Frame", nil, UIParent)
-    DebugViewPane:SetWidth(250)
+    DebugViewPane:SetWidth(220)
     DebugViewPane:SetHeight(700)
     DebugViewPane:SetPoint("RIGHT", -2, 0)
     DebugViewPane:SetToplevel(true)

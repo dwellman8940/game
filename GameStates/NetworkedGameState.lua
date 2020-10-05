@@ -38,6 +38,8 @@ function NetworkedGameStateMixin:HasClientToServerConnection()
 end
 
 function NetworkedGameStateMixin:CreatePeerToPeerConnection(lobbyCode, peerToPeerHandlers, localServer)
+    assert(peerToPeerHandlers)
+
     local function OnPeerToPeerMessageReceived(messageName, ...)
         self:AddMessageToQueue(peerToPeerHandlers, messageName, ...)
     end
@@ -48,6 +50,8 @@ function NetworkedGameStateMixin:CreatePeerToPeerConnection(lobbyCode, peerToPee
 end
 
 function NetworkedGameStateMixin:CreateClientNetworkConnection(lobbyCode, clientHandlers, localServer)
+    assert(clientHandlers)
+
     local localServerOnMessageReceived = localServer and function(messageName, ...) localServer:AddMessageToQueue(messageName, ...) end or nil
 
     local function OnClientMessageReceived(messageName, ...)

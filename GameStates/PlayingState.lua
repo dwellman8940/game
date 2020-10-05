@@ -1,7 +1,7 @@
 local addonName, envTable = ...
 setfenv(1, envTable)
 
-local PlayingStateMixin = Mixin.CreateFromMixins(NetworkedGameStateMixin)
+PlayingStateMixin = Mixin.CreateFromMixins(NetworkedGameStateMixin)
 
 local ClientMessageHandlers = {}
 local PeerToPeerMessageHandlers = {}
@@ -35,13 +35,21 @@ function PlayingStateMixin:HostGame(lobbyCode, playersInLobby)
     self.server = CreateServer()
 
     self:CreateNetworkConnection(lobbyCode, self.server)
-    self.server:CreateNetworkConnection(lobbyCode, self)
+    self.server:CreateNetworkConnection(lobbyCode, self, ClientMessageHandlers)
 
-    self.server:BeginGame(playersInLobby, "Test")
+    self.server:BeginGame("Test", playersInLobby)
+    self:LoadLevel("Test")
+    self.server:AddPlayer(UnitName("player"))
 end
 
 function PlayingStateMixin:JoinGame(lobbyCode)
     self:CreateNetworkConnection(lobbyCode)
+    self:LoadLevel("Test")
+    self:SendServerMessage("PlayerReady", UnitName("player"))
+end
+
+function PlayingStateMixin:IsHost()
+    return self.server ~= nil
 end
 
 function PlayingStateMixin:LoadLevel(levelName)
@@ -93,22 +101,31 @@ end
 
 -- Message Handlers --
 function ClientMessageHandlers:LoadLevel(levelName)
-    self:LoadLevel(levelName)
+    if not self:IsHost() then
+        self:LoadLevel(levelName)
+    end
 end
 
 function ClientMessageHandlers:InitPlayer(playerName, playerID, location, velocity)
     if playerName == UnitName("player") then
-        if not self.localPlayer then
-            self.localPlayer = self:CreateEntity(PlayerEntityMixin, nil, nil, playerName)
-            self.localPlayer:SetIsLobby(true)
+        if self.localPlayer then
+            assert(self.localPlayer:GetPlayerID() == playerID)
+        else
+            self.localPlayer = self:CreateEntity(PlayerEntityMixin, nil, location, playerName)
             self.localPlayer:SetPlayerID(playerID)
             self.localPlayer:MarkAsLocalPlayer(self:GetClient():GetWorldFrame())
             self:GetClient():BindKeyboardToPlayer(self.localPlayer)
+
+            if self:IsHost() then
+                self.server:IgnorePlayerTimeout(playerID)
+            end
+
+            -- Hacky, should wait for a "all clear" server message
+            C_Timer.After(1, function() UI.LoadingScreenUI.Close() end)
         end
     else
         if not self.remotePlayers[playerID] then
-            local remotePlayer = self:CreateEntity(PlayerEntityMixin, nil, nil, playerName)
-            remotePlayer:SetIsLobby(true)
+            local remotePlayer = self:CreateEntity(PlayerEntityMixin, nil, location, playerName)
             remotePlayer:SetPlayerID(playerID)
             remotePlayer:ApplyRemoveMovement(location, velocity)
 

@@ -83,29 +83,78 @@ do
 
         return StandardButton
     end
+end
 
-    function Button.CreateLargeButton(parent)
-        local LargeButton = Button.CreateStandardButton(parent)
 
-        LargeButton:SetHeight(40)
-        LargeButton:SetWidth(250)
-        LargeButton:SetNormalFontObject("GameFontNormalHuge")
-        LargeButton:SetHighlightFontObject("GameFontHighlightHuge")
-        LargeButton:SetDisabledFontObject("GameFontDisableHuge")
+function Button.CreateLargeButton(parent)
+    local LargeButton = Button.CreateStandardButton(parent)
 
-        return LargeButton
+    LargeButton:SetHeight(40)
+    LargeButton:SetWidth(250)
+    LargeButton:SetNormalFontObject("GameFontNormalHuge")
+    LargeButton:SetHighlightFontObject("GameFontHighlightHuge")
+    LargeButton:SetDisabledFontObject("GameFontDisableHuge")
+
+    return LargeButton
+end
+
+function Button.CreateCloseButton(parent)
+    local CloseButton = CreateFrame("Button", nil, parent)
+    CloseButton:SetWidth(32)
+    CloseButton:SetHeight(32)
+
+    CloseButton:SetDisabledTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Disabled]])
+    CloseButton:SetNormalTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Up]])
+    CloseButton:SetPushedTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Down]])
+    CloseButton:SetHighlightTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Highlight]], "ADD")
+
+    return CloseButton
+end
+
+do
+    local function CreateIconButtonTexture(parentFrame, icon, maskTexture)
+        local Texture = parentFrame:CreateTexture()
+        Texture:SetAllPoints(parentFrame)
+        Texture:SetTexture(icon)
+        Texture:AddMaskTexture(maskTexture)
+
+        return Texture
     end
 
-    function Button.CreateCloseButton(parent)
-        local CloseButton = CreateFrame("Button", nil, parent)
-        CloseButton:SetWidth(32)
-        CloseButton:SetHeight(32)
+    function Button.CreateIconButton(parent, icon)
+        local IconButton = CreateFrame("Button", nil, parent)
+        IconButton:SetWidth(48)
+        IconButton:SetHeight(48)
 
-        CloseButton:SetDisabledTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Disabled]])
-        CloseButton:SetNormalTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Up]])
-        CloseButton:SetPushedTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Down]])
-        CloseButton:SetHighlightTexture([[Interface\Buttons\UI-Panel-MinimizeButton-Highlight]], "ADD")
+        local MaskTexture = IconButton:CreateMaskTexture()
+        local MASK_TEXTURE_OFFSET = 3
+        MaskTexture:SetPoint("TOPLEFT", MASK_TEXTURE_OFFSET, -MASK_TEXTURE_OFFSET)
+        MaskTexture:SetPoint("BOTTOMRIGHT", -MASK_TEXTURE_OFFSET, MASK_TEXTURE_OFFSET)
+        MaskTexture:SetTexture([[Interface\CharacterFrame\TempPortraitAlphaMask]], "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
 
-        return CloseButton
+        do
+            local DisabledTexture = CreateIconButtonTexture(IconButton, icon, MaskTexture)
+            DisabledTexture:SetDesaturation(1)
+            IconButton:SetDisabledTexture(DisabledTexture)
+        end
+
+        IconButton:SetNormalTexture(CreateIconButtonTexture(IconButton, icon, MaskTexture))
+
+        do
+            local PushedTexture = CreateIconButtonTexture(IconButton, icon, MaskTexture)
+            PushedTexture:ClearAllPoints()
+            local SCALE_OFFSET = 4
+            PushedTexture:SetPoint("TOPLEFT", -SCALE_OFFSET, SCALE_OFFSET)
+            PushedTexture:SetPoint("BOTTOMRIGHT", SCALE_OFFSET, -SCALE_OFFSET)
+            IconButton:SetPushedTexture(PushedTexture)
+        end
+
+        do
+            local HighlightTexture = CreateIconButtonTexture(IconButton, icon, MaskTexture)
+            HighlightTexture:SetAlpha(.25)
+            IconButton:SetHighlightTexture(HighlightTexture, "ADD")
+        end
+
+        return IconButton
     end
 end

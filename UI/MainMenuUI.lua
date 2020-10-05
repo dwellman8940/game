@@ -3,9 +3,50 @@ local GameTooltip = GameTooltip
 local addonName, envTable = ...
 setfenv(1, envTable)
 
+local MainMenuFrame
+local MainMenuFrameMixin = {}
+local JoinLobbyDialogMixin = {}
+local AlertDialogFrameMixin = {}
+
 UI.MainMenuUI = {}
 
-local MainMenuFrameMixin = {}
+function UI.MainMenuUI.Open(callbacks)
+    if not MainMenuFrame then
+        MainMenuFrame = CreateFrame("Frame", nil, UI.GetUIParentFrame())
+        Mixin.MixinInto(MainMenuFrame, MainMenuFrameMixin)
+        MainMenuFrame:Initialize()
+    end
+    MainMenuFrame:SetCallbacks(callbacks)
+    MainMenuFrame:Show()
+end
+
+function UI.MainMenuUI.Close()
+    assert(MainMenuFrame)
+    assert(MainMenuFrame:IsShown())
+
+    MainMenuFrame:Close()
+end
+
+function UI.MainMenuUI.SetHasGroup(hasGroup)
+    assert(MainMenuFrame)
+    assert(MainMenuFrame:IsShown())
+
+    MainMenuFrame:SetHasGroup(hasGroup)
+end
+
+function UI.MainMenuUI.ShowAlert(messageText, button1Text, button1Callback)
+    assert(MainMenuFrame)
+    assert(MainMenuFrame:IsShown())
+
+    MainMenuFrame:ShowAlert(messageText, button1Text, button1Callback)
+end
+
+function UI.MainMenuUI.UpdateLobbies(lobbies)
+    assert(MainMenuFrame)
+    assert(MainMenuFrame:IsShown())
+
+    MainMenuFrame:UpdateLobbies(lobbies)
+end
 
 function MainMenuFrameMixin:Initialize()
     self:SetAllPoints(self:GetParent())
@@ -36,7 +77,7 @@ function MainMenuFrameMixin:Initialize()
         local JoinGameButton = Button.CreateLargeButton(self)
         JoinGameButton:SetPoint("CENTER")
         JoinGameButton:SetText(Localization.GetString("JoinGame"))
-        JoinGameButton:SetScript("OnClick", function() self:SetLobbyDisplayShown(true) end)
+        JoinGameButton:SetScript("OnClick", function() self:OpenJoinLobbyDialog() end)
         self.JoinGameButton = JoinGameButton
     end
 
@@ -99,43 +140,37 @@ function MainMenuFrameMixin:Close()
     end
 end
 
-function MainMenuFrameMixin:SetLobbyDisplayShown(shown)
-    if not self.LobbySelectionFrame and shown then
-        self.LobbySelectionFrame = UI.MainMenuUI.CreateJoinLobbyDialog(self)
+function MainMenuFrameMixin:OpenJoinLobbyDialog()
+    if not self.LobbySelectionFrame then
+        self.LobbySelectionFrame = UI.CreateFrameFromMixin(self, JoinLobbyDialogMixin)
     end
 
+    local callbacks =
+    {
+        Join = function(lobbyHost, lobbyCode) self.callbacks.Join(lobbyHost, lobbyCode) self:CloseJoinLobbyDialog()  end,
+        CloseDialog = function() self:CloseJoinLobbyDialog() end,
+    }
+    self.LobbySelectionFrame:SetCallbacks(callbacks)
+    self.LobbySelectionFrame:UpdateLobbies(self.lobbies)
+    self.LobbySelectionFrame:Show()
+end
+
+function MainMenuFrameMixin:CloseJoinLobbyDialog()
     if self.LobbySelectionFrame then
-        self.LobbySelectionFrame:SetShown(shown)
-        if shown then
-            local callbacks =
-            {
-                Join = self.callbacks.Join,
-                CloseDialog = function() self:SetLobbyDisplayShown(false) end,
-            }
-            self.LobbySelectionFrame:SetCallbacks(callbacks)
-            self.LobbySelectionFrame:UpdateLobbies(self.lobbies)
-        end
+        self.LobbySelectionFrame:Hide()
+        self.LobbySelectionFrame:SetCallbacks(nil)
+        self.LobbySelectionFrame:UpdateLobbies(nil)
     end
 end
 
 function MainMenuFrameMixin:ShowAlert(messageText, button1Text, button1Callback)
     if not self.AlertFrame then
-        self.AlertFrame = UI.MainMenuUI.CreateAlertDialog(self)
+        self.AlertFrame = UI.CreateFrameFromMixin(self, AlertDialogFrameMixin)
     end
-    self:SetLobbyDisplayShown(false)
+    self:CloseJoinLobbyDialog()
 
     self.AlertFrame:ShowMessage(messageText, button1Text, button1Callback)
 end
-
-function UI.MainMenuUI.CreateMainMenuFrame(parentFrame)
-    local MainMenuFrame = CreateFrame("Frame", nil, parentFrame)
-    Mixin.MixinInto(MainMenuFrame, MainMenuFrameMixin)
-    MainMenuFrame:Initialize()
-
-    return MainMenuFrame
-end
-
-local JoinLobbyDialogMixin = {}
 
 function JoinLobbyDialogMixin:Initialize()
     self:CreateSubFrames()
@@ -189,6 +224,10 @@ local function IsLobbyFull(lobbyData)
     return lobbyData.numPlayers >= lobbyData.maxPlayers
 end
 
+local function IsLobbyStarting(lobbyData)
+    return lobbyData.gameStarting
+end
+
 local function CompareLobbyVersion(lobbyData)
     local minor, major = Version.GetVersionFromString(lobbyData.versionString)
     return Version.CompareVersions(minor, major)
@@ -226,7 +265,7 @@ local function LobbySort(a, b)
 end
 
 local function CanLobbyBeJoined(lobbyData)
-    return not IsLobbyFull(lobbyData) and IsLobbyVersionSame(lobbyData)
+    return not IsLobbyFull(lobbyData) and not IsLobbyStarting(lobbyData) and IsLobbyVersionSame(lobbyData)
 end
 
 function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
@@ -269,6 +308,10 @@ function JoinLobbyDialogMixin:UpdateLobbies(lobbies)
                 GameTooltip:SetPoint("LEFT", row, "RIGHT", 5, 0)
                 local tooltipText = Localization.GetString(CompareLobbyVersion(lobbyData) == Version.CompareResult.Newer and "LobbyNewerVersionTooltip" or "LobbyOlderVersionTooltip"):format(lobbyData.versionString)
                 GameTooltip:SetText(tooltipText, Colors.Red:GetRGB())
+            elseif IsLobbyStarting(lobbyData) then
+                GameTooltip:SetOwner(row, "ANCHOR_NONE")
+                GameTooltip:SetPoint("LEFT", row, "RIGHT", 5, 0)
+                GameTooltip:SetText(Localization.GetString("LobbyStartingTooltip"), Colors.Red:GetRGB())
             elseif IsLobbyFull(lobbyData) then
                 GameTooltip:SetOwner(row, "ANCHOR_NONE")
                 GameTooltip:SetPoint("LEFT", row, "RIGHT", 5, 0)
@@ -342,15 +385,6 @@ function JoinLobbyDialogMixin:CreateSubFrames()
     end
 end
 
-function UI.MainMenuUI.CreateJoinLobbyDialog(parentFrame)
-    local LobbySelectionFrame = CreateFrame("Frame", nil, parentFrame)
-    Mixin.MixinInto(LobbySelectionFrame, JoinLobbyDialogMixin)
-    LobbySelectionFrame:Initialize()
-    return LobbySelectionFrame
-end
-
-local AlertDialogFrameMixin = {}
-
 function AlertDialogFrameMixin:Initialize()
     do
         local ModalFrame = CreateFrame("Frame", nil, self:GetParent())
@@ -390,11 +424,4 @@ function AlertDialogFrameMixin:ShowMessage(messageText, button1Text, button1Call
     self.Button2:Hide()
 
     self:Show()
-end
-
-function UI.MainMenuUI.CreateAlertDialog(parentFrame)
-    local AlertDialogFrame = CreateFrame("Frame", nil, parentFrame)
-    Mixin.MixinInto(AlertDialogFrame, AlertDialogFrameMixin)
-    AlertDialogFrame:Initialize()
-    return AlertDialogFrame
 end

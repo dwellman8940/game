@@ -66,7 +66,7 @@ local LevelData = {
             Occlusion = 1,
             Vertices = TestVertices,
             WorldLocation = {
-                x = 0,
+                x = -100,
                 y = 0,
             }
         },
@@ -84,7 +84,7 @@ local LevelData = {
             Occlusion = 1,
             Vertices = LongBoxVertices,
             WorldLocation = {
-                x = -250,
+                x = -350,
                 y = -250,
             }
         },
@@ -93,7 +93,7 @@ local LevelData = {
             Occlusion = 1,
             Vertices = TallBoxVertices,
             WorldLocation = {
-                x = -250,
+                x = -350,
                 y = -150,
             }
         },
@@ -102,7 +102,7 @@ local LevelData = {
             Occlusion = 1,
             Vertices = TallBoxVertices,
             WorldLocation = {
-                x = -150,
+                x = -250,
                 y = -120,
             }
         },
